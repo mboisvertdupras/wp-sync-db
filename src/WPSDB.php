@@ -1383,7 +1383,11 @@ class WPSDB extends WPSDB_Base
       <div id="icon-tools" class="icon32"><br /></div>
       <h2>Migrate DB</h2>
 
-      <h2 class="nav-tab-wrapper"><a href="#" class="nav-tab nav-tab-active js-action-link migrate" data-div-name="migrate-tab"><?php _e('Migrate', 'wp-sync-db'); ?></a><a href="#" class="nav-tab js-action-link settings" data-div-name="settings-tab"><?php _e('Settings', 'wp-sync-db'); ?></a><a href="#" class="nav-tab js-action-link help" data-div-name="help-tab"><?php _e('Help', 'wp-sync-db'); ?></a></h2>
+      <h2 class="nav-tab-wrapper">
+        <a href="#" class="nav-tab nav-tab-active js-action-link migrate" data-div-name="migrate-tab"><?php _e('Migrate', 'wp-sync-db'); ?></a>
+        <a href="#" class="nav-tab js-action-link settings" data-div-name="settings-tab"><?php _e('Settings', 'wp-sync-db'); ?></a>
+        <a href="#" class="nav-tab js-action-link help" data-div-name="help-tab"><?php _e('Help', 'wp-sync-db'); ?></a>
+      </h2>
 
       <?php
       do_action('wpsdb_notices');
