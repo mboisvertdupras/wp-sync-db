@@ -5,6 +5,7 @@
 - [Description and features](#description)
 - [Installation](#installation)
 - [Usage](#usage)
+- [Localization](#localization)
 - [Similar Tools](#similar-tools)
 - [Isn't this the same as WP Migrate DB Pro?](#isnt-this-the-same-as-wp-migrate-db-pro)
 - [Is this Illegal?](#is-this-illegal)
@@ -117,6 +118,16 @@ Once you have the profile number, you can run the migration using the following 
 ```bash
 wp wpsdb migrate [profile-number]
 ```
+
+## Localization
+
+WP Sync DB is localized using `gettext` and includes the following languages:
+- [x] English (default)
+- [x] French (fr_FR)
+
+The CLI part of the plugin is only available in English, no translations will be added.
+
+If you'd like to add your language, please fork the repo and submit a pull request with your translation files in the `languages` folder, keep in mind that this plugin is intended for developers, and keeping standard technical terms in English is preferred, unless there is a widely accepted translation for them.
 
 ## Similar Tools
 
