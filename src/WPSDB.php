@@ -102,37 +102,195 @@ class WPSDB extends WPSDB_Base
       }
     }
 
+    /**
+     * Filter the plugin action links displayed on the Plugins page.
+     *
+     * @since 1.0
+     * @param array<string, string> $actions An array of plugin action links.
+     * @return array<string, string> Modified array of plugin action links.
+     */
     add_filter('plugin_action_links_' . $this->plugin_basename, $this->plugin_action_links(...));
+
+    /**
+     * Filter the plugin action links displayed on the Network Plugins page (multisite).
+     *
+     * @since 1.0
+     * @param array<string, string> $actions An array of plugin action links.
+     * @return array<string, string> Modified array of plugin action links.
+     */
     add_filter('network_admin_plugin_action_links_' . $this->plugin_basename, $this->plugin_action_links(...));
 
     // internal AJAX handlers
+
+    /**
+     * Handle AJAX request to verify connection to a remote site.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_verify_connection_to_remote_site', $this->ajax_verify_connection_to_remote_site(...));
+
+    /**
+     * Handle AJAX request to reset the API key.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_reset_api_key', $this->ajax_reset_api_key(...));
+
+    /**
+     * Handle AJAX request to delete a migration profile.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_delete_migration_profile', $this->ajax_delete_migration_profile(...));
+
+    /**
+     * Handle AJAX request to save a setting.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_save_setting', $this->ajax_save_setting(...));
+
+    /**
+     * Handle AJAX request to save a migration profile.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_save_profile', $this->ajax_save_profile(...));
+
+    /**
+     * Handle AJAX request to initiate a migration.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_initiate_migration', $this->ajax_initiate_migration(...));
+
+    /**
+     * Handle AJAX request to migrate a table.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_migrate_table', $this->ajax_migrate_table(...));
+
+    /**
+     * Handle AJAX request to finalize a migration.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_finalize_migration', $this->ajax_finalize_migration(...));
+
+    /**
+     * Handle AJAX request to clear the migration log.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_clear_log', $this->ajax_clear_log(...));
+
+    /**
+     * Handle AJAX request to retrieve the migration log.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_get_log', $this->ajax_get_log(...));
+
+    /**
+     * Handle AJAX request to fire migration complete action.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_fire_migration_complete', $this->fire_migration_complete(...));
+
+    /**
+     * Handle AJAX request to update max request size.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_update_max_request_size', $this->ajax_update_max_request_size(...));
+
+    /**
+     * Handle AJAX request to check plugin compatibility.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_plugin_compatibility', $this->ajax_plugin_compatibility(...));
+
+    /**
+     * Handle AJAX request to update blacklisted plugins.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_blacklist_plugins', $this->ajax_blacklist_plugins(...));
+
+    /**
+     * Handle AJAX request to cancel a migration.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_wpsdb_cancel_migration', $this->ajax_cancel_migration(...));
 
     // external AJAX handlers
+
+    /**
+     * Handle external AJAX request to verify connection from remote site.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_nopriv_wpsdb_verify_connection_to_remote_site', $this->respond_to_verify_connection_to_remote_site(...));
+
+    /**
+     * Handle external AJAX request to initiate migration on remote site.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_nopriv_wpsdb_remote_initiate_migration', $this->respond_to_remote_initiate_migration(...));
+
+    /**
+     * Handle external AJAX request to process a migration chunk.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_nopriv_wpsdb_process_chunk', $this->ajax_process_chunk(...));
+
+    /**
+     * Handle external AJAX request to process a pull request.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_nopriv_wpsdb_process_pull_request', $this->respond_to_process_pull_request(...));
+
+    /**
+     * Handle external AJAX request to fire migration complete action.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_nopriv_wpsdb_fire_migration_complete', $this->fire_migration_complete(...));
+
+    /**
+     * Handle external AJAX request to backup a remote table.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_nopriv_wpsdb_backup_remote_table', $this->respond_to_backup_remote_table(...));
+
+    /**
+     * Handle external AJAX request to finalize migration on remote site.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_nopriv_wpsdb_remote_finalize_migration', $this->respond_to_remote_finalize_migration(...));
+
+    /**
+     * Handle external AJAX request to process push migration cancellation.
+     *
+     * @since 1.0
+     */
     add_action('wp_ajax_nopriv_wpsdb_process_push_migration_cancellation', $this->respond_to_process_push_migration_cancellation(...));
 
-    // Clear update transients when the user clicks the "Check Again" button from the update screen
+    /**
+     * Clear update transients when the user clicks the "Check Again" button from the update screen.
+     *
+     * @since 1.0
+     * @param WP_Screen $current_screen Current WordPress admin screen object.
+     */
     add_action('current_screen', $this->check_again_clear_transients(...));
 
     $absolute_path = rtrim(ABSPATH, '\\/');
@@ -195,20 +353,47 @@ class WPSDB extends WPSDB_Base
     ];
 
     if (is_multisite()) {
+      /**
+       * Add WP Sync DB menu to the network admin dashboard (multisite).
+       *
+       * @since 1.0
+       */
       add_action('network_admin_menu', $this->network_admin_menu(...));
     } else {
+      /**
+       * Add WP Sync DB menu to the admin dashboard.
+       *
+       * @since 1.0
+       */
       add_action('admin_menu', $this->admin_menu(...));
     }
 
+    /**
+     * Filter the admin body CSS classes.
+     *
+     * @since 1.0
+     * @param string $classes Space-separated list of CSS classes.
+     * @return string Modified space-separated list of CSS classes.
+     */
     add_filter('admin_body_class', $this->admin_body_class(...));
 
     // this is how many DB rows are processed at a time, allow devs to change this value
     $this->rows_per_segment = apply_filters('wpsdb_rows_per_segment', $this->rows_per_segment);
 
     if (is_multisite()) {
+      /**
+       * Add WP Sync DB menu to the network admin dashboard (multisite).
+       *
+       * @since 1.0
+       */
       add_action('network_admin_menu', $this->network_admin_menu(...));
       $this->plugin_base = 'settings.php?page=wp-sync-db';
     } else {
+      /**
+       * Add WP Sync DB menu to the admin dashboard.
+       *
+       * @since 1.0
+       */
       add_action('admin_menu', $this->admin_menu(...));
       $this->plugin_base = 'tools.php?page=wp-sync-db';
     }
@@ -2181,7 +2366,18 @@ class WPSDB extends WPSDB_Base
 
   public function after_admin_menu(string $hook_suffix): void
   {
+    /**
+     * Output CSS in the admin head for the plugin page.
+     *
+     * @since 1.0
+     */
     add_action('admin_head-' . $hook_suffix, $this->admin_head_connection_info(...));
+
+    /**
+     * Load assets and handle post requests on the plugin page load.
+     *
+     * @since 1.0
+     */
     add_action('load-' . $hook_suffix, $this->load_assets(...));
   }
 

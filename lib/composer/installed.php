@@ -3,7 +3,7 @@
         'name' => 'jsongerber/wp-sync-db',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '807f95e22998919856728294cf4e245bdc7995d6',
+        'reference' => '32c54c3c5ce8e5526417e11e9c843fbba7fd7cb4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         'jsongerber/wp-sync-db' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '807f95e22998919856728294cf4e245bdc7995d6',
+            'reference' => '32c54c3c5ce8e5526417e11e9c843fbba7fd7cb4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
