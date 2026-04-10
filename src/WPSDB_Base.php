@@ -5,16 +5,17 @@ namespace WPSDB;
 
 class WPSDB_Base
 {
-  protected $settings;
-  protected $plugin_dir_path;
+  /** @var array<string, mixed> */
+  protected array $settings;
+  protected string $plugin_dir_path;
 
   protected string $plugin_folder_name;
 
-  protected $plugin_basename;
+  protected string $plugin_basename;
 
   protected string $plugin_base;
 
-  protected $plugin_version;
+  protected string $plugin_version;
 
   protected string $template_dir;
 
@@ -24,19 +25,19 @@ class WPSDB_Base
 
   protected int $transient_retry_timeout;
 
-  protected $multipart_boundary = 'bWH4JVmYCnf6GfXacrcc';
+  protected string $multipart_boundary = 'bWH4JVmYCnf6GfXacrcc';
 
-  protected $attempting_to_connect_to;
+  protected ?string $attempting_to_connect_to = null;
 
-  protected $error;
+  protected ?string $error = null;
 
-  protected $temp_prefix = '_mig_';
+  protected string $temp_prefix = '_mig_';
 
   protected string $invalid_content_verification_error;
 
-  protected $doing_cli_migration = false;
+  protected bool $doing_cli_migration = false;
 
-  public function __construct(protected $plugin_file_path)
+  public function __construct(protected string $plugin_file_path)
   {
     $this->settings = get_option('wpsdb_settings');
     if (!is_array($this->settings)) {
@@ -86,7 +87,7 @@ class WPSDB_Base
     }
   }
 
-  public function remote_post($url, $data, $scope, $args = [], $expecting_serial = false)
+  public function remote_post(string $url, array $data, string $scope, array $args = [], bool $expecting_serial = false): mixed
   {
     $this->set_time_limit();
 
@@ -131,12 +132,12 @@ class WPSDB_Base
         if (str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
           return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
         }
-        if (isset($response->errors['http_request_failed'][0]) && strstr($response->errors['http_request_failed'][0], 'timed out')) {
+        if (isset($response->errors['http_request_failed'][0]) && str_contains($response->errors['http_request_failed'][0], 'timed out')) {
           $this->error = sprintf(__('The connection to the remote server has timed out, no changes have been committed. (#134 - scope: %s)', 'wp-sync-db'), $scope);
-        } else if (isset($response->errors['http_request_failed'][0]) && (strstr($response->errors['http_request_failed'][0], 'Could not resolve host') || strstr($response->errors['http_request_failed'][0], "couldn't connect to host"))) {
+        } else if (isset($response->errors['http_request_failed'][0]) && (str_contains($response->errors['http_request_failed'][0], 'Could not resolve host') || str_contains($response->errors['http_request_failed'][0], "couldn't connect to host"))) {
           $this->error = sprintf(__('We could not find: %s. Are you sure this is the correct URL?', 'wp-sync-db'), $_POST['url']);
           $url_bits = parse_url((string) $_POST['url']);
-          if (strstr((string) $_POST['url'], 'dev.') || strstr((string) $_POST['url'], '.dev') || ! strstr($url_bits['host'], '.')) {
+          if (str_contains((string) $_POST['url'], 'dev.') || str_contains((string) $_POST['url'], '.dev') || ! str_contains($url_bits['host'], '.')) {
             $this->error .= '<br />';
             if ($_POST['intent'] == 'pull') {
               $this->error .= __('It appears that you might be trying to pull from a local environment. This will not work if <u>this</u> website happens to be located on a remote server, it would be impossible for this server to contact your local environment.', 'wp-sync-db');
@@ -193,7 +194,7 @@ class WPSDB_Base
     return $response['body'];
   }
 
-  public function retry_remote_post($url, $data, $scope, $args = [], $expecting_serial = false)
+  public function retry_remote_post(string $url, array $data, string $scope, array $args = [], bool $expecting_serial = false): mixed
   {
     $url = substr_replace($url, 'http', 0, 5);
     if ($response = $this->remote_post($url, $data, $scope, $args, $expecting_serial)) {
@@ -203,7 +204,7 @@ class WPSDB_Base
     return false;
   }
 
-  public function array_to_multipart($data)
+  public function array_to_multipart(array $data): mixed
   {
     if (!$data || !is_array($data)) {
       return $data;
@@ -250,7 +251,7 @@ class WPSDB_Base
     return $result . ("--" . $this->multipart_boundary . "--\r\n");
   }
 
-  public function log_error(string $wpsdb_error, $additional_error_var = false): void
+  public function log_error(string $wpsdb_error, array|false $additional_error_var = false): void
   {
     $error_header = "********************************************\n******  Log date: " . date('Y/m/d H:i:s') . " ******\n********************************************\n\n";
     $error = $error_header . "WPSDB Error: " . $wpsdb_error . "\n\n";
@@ -283,7 +284,7 @@ class WPSDB_Base
     return false;
   }
 
-  public function filter_post_elements(array $post_array, $accepted_elements): array
+  public function filter_post_elements(array $post_array, array $accepted_elements): array
   {
     if (isset($post_array['form_data'])) {
       $post_array['form_data'] = stripslashes($post_array['form_data']);
@@ -293,7 +294,7 @@ class WPSDB_Base
     return array_intersect_key($post_array, array_flip($accepted_elements));
   }
 
-  public function create_signature(array $data, $key): string
+  public function create_signature(array $data, string $key): string
   {
     if (isset($data['sig'])) {
       unset($data['sig']);
@@ -303,7 +304,7 @@ class WPSDB_Base
     return base64_encode(hash_hmac('sha1', $flat_data, (string) $key, true));
   }
 
-  public function verify_signature(array $data, $key)
+  public function verify_signature(array $data, string $key): bool
   {
     if (empty($data['sig'])) {
       return false;
@@ -321,7 +322,7 @@ class WPSDB_Base
   /**
    * @return non-empty-array[]
    */
-  public function diverse_array($vector): array
+  public function diverse_array(array $vector): array
   {
     $result = [];
     foreach ($vector as $key1 => $value1)
@@ -331,7 +332,7 @@ class WPSDB_Base
     return $result;
   }
 
-  public function set_time_limit_available()
+  public function set_time_limit_available(): bool
   {
     if (! function_exists('set_time_limit') || ! function_exists('ini_get')) return false;
 
@@ -342,7 +343,7 @@ class WPSDB_Base
     return ($proposed_max_execution_time == $current_max_execution_time);
   }
 
-  public function get_plugin_name($plugin = false)
+  public function get_plugin_name(string|false $plugin = false): string|false
   {
     if (!is_admin()) return false;
 
@@ -363,7 +364,11 @@ class WPSDB_Base
   }
 
   // Get only the table beginning with our DB prefix or temporary prefix, also skip views
-  public function get_tables($scope = 'regular')
+  // Get only the table beginning with our DB prefix or temporary prefix, also skip views
+  /**
+   * @return string[]
+   */
+  public function get_tables(string $scope = 'regular'): array
   {
     global $wpdb;
     $prefix = ($scope == 'temp' ? $this->temp_prefix : $wpdb->prefix);
@@ -388,7 +393,7 @@ class WPSDB_Base
     return substr($path, 0, strrpos($path, DIRECTORY_SEPARATOR)) . DIRECTORY_SEPARATOR;
   }
 
-  public function get_plugin_file_path()
+  public function get_plugin_file_path(): string
   {
     return $this->plugin_file_path;
   }
@@ -398,7 +403,7 @@ class WPSDB_Base
     $this->doing_cli_migration = true;
   }
 
-  public function end_ajax($return = false)
+  public function end_ajax(string|false $return = false): ?string
   {
     if (defined('DOING_WPSDB_TESTS') || $this->doing_cli_migration) {
       return (false === $return) ? NULL : $return;
@@ -408,7 +413,7 @@ class WPSDB_Base
     exit;
   }
 
-  public function check_ajax_referer($action): void
+  public function check_ajax_referer(string $action): void
   {
     if (defined('DOING_WPSDB_TESTS') || $this->doing_cli_migration) return;
 
