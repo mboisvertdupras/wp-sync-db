@@ -11,7 +11,8 @@
 		"db"
 	],
 	"scripts": {
-		"test": "./test.sh"
+		"test": "./test.sh",
+		"phpcs": "./lib/bin/phpcs"
 	},
 	"autoload": {
 		"psr-4": {
@@ -22,12 +23,17 @@
 		"php-stubs/wp-cli-stubs": "^2.12",
 		"php-stubs/wordpress-stubs": "^6.8",
 		"php-stubs/wordpress-globals": "^0.2.0",
-		"rector/rector": "*"
+		"rector/rector": "*",
+		"squizlabs/php_codesniffer": "^3.12",
+		"wp-coding-standards/wpcs": "^3.2"
 	},
 	"require": {
 		"php": ">=8.3"
 	},
 	"config": {
-		"vendor-dir": "lib"
+		"vendor-dir": "lib",
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		}
 	}
 }
