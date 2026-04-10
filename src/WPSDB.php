@@ -13,37 +13,42 @@ class WPSDB extends WPSDB_Base
 
   protected string $absolute_root_file_path;
 
-  protected $form_defaults;
+  /** @var array<string, mixed> */
+  protected array $form_defaults;
 
   protected array $accepted_fields;
 
-  protected $default_profile;
+  /** @var array<string, mixed> */
+  protected array $default_profile;
 
-  protected $maximum_chunk_size;
+  protected ?int $maximum_chunk_size = null;
 
-  protected $current_chunk = '';
+  protected string $current_chunk = '';
 
-  protected $connection_details;
+  /** @var array<string, mixed>|null */
+  protected ?array $connection_details = null;
 
-  protected $remote_url;
+  protected ?string $remote_url = null;
 
-  protected $remote_key;
+  protected ?string $remote_key = null;
 
-  protected $form_data;
+  /** @var array<string, mixed>|null */
+  protected ?array $form_data = null;
 
   protected int $max_insert_string_len;
 
-  protected $row_tracker;
+  protected int $row_tracker = 0;
 
-  protected $rows_per_segment = 100;
+  protected int $rows_per_segment = 100;
 
-  protected $create_alter_table_query;
+  protected ?string $create_alter_table_query = null;
 
-  protected $alter_table_name;
+  protected ?string $alter_table_name = null;
 
-  protected $session_salt;
+  protected ?string $session_salt = null;
 
-  protected $primary_keys;
+  /** @var array<string, mixed>|null */
+  protected ?array $primary_keys = null;
 
   protected array $checkbox_options;
 
@@ -1286,14 +1291,12 @@ class WPSDB extends WPSDB_Base
     $val = trim(ini_get('post_max_size'));
     $last = strtolower($val[strlen($val) - 1]);
     $val = (int) $val;
-    switch ($last) {
-      case 'g':
-        $val *= 1024;
-      case 'm':
-        $val *= 1024;
-      case 'k':
-        $val *= 1024;
-    }
+    $val *= match ($last) {
+      'g' => 1024 * 1024 * 1024,
+      'm' => 1024 * 1024,
+      'k' => 1024,
+      default => 1,
+    };
     return $val;
   }
 
@@ -2409,28 +2412,19 @@ class WPSDB extends WPSDB_Base
     return $current_site->domain;
   }
 
-  public function return_bytes($val)
+  public function return_bytes($val): int|false
   {
-    if (is_numeric($val)) return $val;
+    if (is_numeric($val)) return (int) $val;
     if (empty($val)) return false;
     $val = trim((string) $val);
     $last = strtolower($val[strlen($val) - 1]);
-    $val = (int) $val;
-    switch ($last) {
-      // The 'G' modifier is available since PHP 5.1.0
-      case 'g':
-        $val *= 1024;
-      case 'm':
-        $val *= 1024;
-      case 'k':
-        $val *= 1024;
-        break;
-      default:
-        $val = false;
-        break;
-    }
-
-    return $val;
+    $num = (int) $val;
+    return match ($last) {
+      'g' => $num * 1024 * 1024 * 1024,
+      'm' => $num * 1024 * 1024,
+      'k' => $num * 1024,
+      default => false,
+    };
   }
 
   public function maybe_checked($option): void
@@ -2442,12 +2436,9 @@ class WPSDB extends WPSDB_Base
   {
     $this->form_data = $this->parse_migration_form_data($_POST['form_data']);
 
-    switch ($_POST['intent']) {
-      case 'savefile':
-        $this->delete_export_file($_POST['dump_filename'], false);
-        break;
-
-      case 'push':
+    match ($_POST['intent']) {
+      'savefile' => $this->delete_export_file($_POST['dump_filename'], false),
+      'push' => (function () {
         $data = $_POST;
         $data['action'] = 'wpsdb_process_push_migration_cancellation';
         $data['temp_prefix'] = $this->temp_prefix;
@@ -2458,19 +2449,13 @@ class WPSDB extends WPSDB_Base
         $this->display_errors();
 
         echo trim((string) $response);
-        break;
-
-      case 'pull':
-        if ($_POST['stage'] == 'backup') {
-          $this->delete_export_file($_POST['dump_filename'], true);
-        } else {
-          $this->delete_temporary_tables($_POST['temp_prefix']);
-        }
-        break;
-
-      default:
-        break;
-    }
+      })(),
+      'pull' => match ($_POST['stage']) {
+        'backup' => $this->delete_export_file($_POST['dump_filename'], true),
+        default => $this->delete_temporary_tables($_POST['temp_prefix']),
+      },
+      default => null,
+    };
 
     exit;
   }
