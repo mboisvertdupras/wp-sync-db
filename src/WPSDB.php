@@ -275,20 +275,20 @@ class WPSDB extends WPSDB_Base
 
     $upload_dir_name = apply_filters('wpsdb_upload_dir_name', 'wp-sync-db');
 
-    if (!file_exists($upload_dir['basedir'] . DS . $upload_dir_name)) {
+    if (!file_exists($upload_dir['basedir'] . DIRECTORY_SEPARATOR . $upload_dir_name)) {
       $url = wp_nonce_url($this->plugin_base, 'wp-sync-db-nonce');
 
-      if (false === @mkdir($upload_dir['basedir'] . DS . $upload_dir_name, 0755)) {
+      if (false === @mkdir($upload_dir['basedir'] . DIRECTORY_SEPARATOR . $upload_dir_name, 0755)) {
         return $upload_info[$type];
       }
 
-      $filename = $upload_dir['basedir'] . DS . $upload_dir_name . DS . 'index.php';
+      $filename = $upload_dir['basedir'] . DIRECTORY_SEPARATOR . $upload_dir_name . DIRECTORY_SEPARATOR . 'index.php';
       if (false === @file_put_contents($filename, "<?php\r\n// Silence is golden\r\n?>")) {
         return $upload_info[$type];
       }
     }
 
-    $upload_info['path'] .= DS . $upload_dir_name;
+    $upload_info['path'] .= DIRECTORY_SEPARATOR . $upload_dir_name;
     $upload_info['url'] .= '/' . $upload_dir_name;
 
     return $upload_info[$type];
@@ -316,7 +316,7 @@ class WPSDB extends WPSDB_Base
       $this->session_salt = strtolower(wp_generate_password(5, false, false));
     }
     $datetime = date('YmdHis');
-    $ds = ($info_type == 'path' ? DS : '/');
+    $ds = ($info_type == 'path' ? DIRECTORY_SEPARATOR : '/');
     return sprintf('%s%s%s-%s-%s-%s.sql', $this->get_upload_info($info_type), $ds, sanitize_title_with_dashes(DB_NAME), $migration_type, $datetime, $this->session_salt);
   }
 
@@ -760,7 +760,7 @@ class WPSDB extends WPSDB_Base
         $this->remote_key = $_POST['key'];
         $this->remote_url = $_POST['url'];
       }
-      $sql_dump_file_name = $this->get_upload_info('path') . DS;
+      $sql_dump_file_name = $this->get_upload_info('path') . DIRECTORY_SEPARATOR;
       $sql_dump_file_name .= $this->format_dump_name($_POST['dump_filename']);
 
       if ($_POST['intent'] == 'savefile') {
@@ -857,7 +857,7 @@ class WPSDB extends WPSDB_Base
       unset($this->form_data['gzip_file']);
     }
     $this->maximum_chunk_size = $this->get_bottleneck();
-    $sql_dump_file_name = $this->get_upload_info('path') . DS;
+    $sql_dump_file_name = $this->get_upload_info('path') . DIRECTORY_SEPARATOR;
     $sql_dump_file_name .= $this->format_dump_name($_POST['dump_filename']);
     $file_created = file_exists($sql_dump_file_name);
     $this->fp = $this->open($sql_dump_file_name);
@@ -941,7 +941,7 @@ class WPSDB extends WPSDB_Base
         $return['dump_filename'] .= '.gz';
         $return['dump_url'] .= '.gz';
       }
-      $this->fp = $this->open($this->get_upload_info('path') . DS . $return['dump_filename']);
+      $this->fp = $this->open($this->get_upload_info('path') . DIRECTORY_SEPARATOR . $return['dump_filename']);
       $this->db_backup_header();
       $this->close($this->fp);
 
@@ -2340,7 +2340,7 @@ class WPSDB extends WPSDB_Base
     if (isset($_GET['gzip'])) {
       $dump_name .= '.gz';
     }
-    $diskfile = $this->get_upload_info('path') . DS . $dump_name;
+    $diskfile = $this->get_upload_info('path') . DIRECTORY_SEPARATOR . $dump_name;
     $filename = basename($diskfile);
     $last_dash = strrpos($filename, '-');
     $salt = substr($filename, $last_dash, 6);
@@ -2543,7 +2543,7 @@ class WPSDB extends WPSDB_Base
     if (true == $is_backup) {
       $dump_file = preg_replace('/.gz$/', '', $dump_file);
     }
-    $dump_file = $this->get_upload_info('path') . DS . $dump_file;
+    $dump_file = $this->get_upload_info('path') . DIRECTORY_SEPARATOR . $dump_file;
 
     if (empty($dump_file) || false == file_exists($dump_file)) {
       _e('MySQL export file not found.', 'wp-sync-db');

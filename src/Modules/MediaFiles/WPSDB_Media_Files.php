@@ -156,7 +156,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     $local_media = array();
 
     foreach ($files as $name => $object) {
-      $name = str_replace(array($upload_dir . DS, '\\'), array('', '/'), $name);
+      $name = str_replace(array($upload_dir . DIRECTORY_SEPARATOR, '\\'), array('', '/'), $name);
       $local_media[$name] = $object->getSize();
     }
 

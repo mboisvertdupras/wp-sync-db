@@ -38,7 +38,7 @@ class WPSDB_Base
     $this->plugin_dir_path = plugin_dir_path($plugin_file_path);
     $this->plugin_folder_name = basename($this->plugin_dir_path);
     $this->plugin_basename = plugin_basename($plugin_file_path);
-    $this->template_dir = $this->plugin_dir_path . 'template' . DS;
+    $this->template_dir = $this->plugin_dir_path . 'template' . DIRECTORY_SEPARATOR;
     $this->plugin_title = ucwords(str_ireplace('-', ' ', basename($plugin_file_path)));
     $this->plugin_title = str_ireplace(array('db', 'wp', '.php'), array('DB', 'WP', ''), $this->plugin_title);
 
@@ -350,7 +350,7 @@ class WPSDB_Base
   function plugins_dir()
   {
     $path = untrailingslashit($this->plugin_dir_path);
-    return substr($path, 0, strrpos($path, DS)) . DS;
+    return substr($path, 0, strrpos($path, DIRECTORY_SEPARATOR)) . DIRECTORY_SEPARATOR;
   }
 
   function get_plugin_file_path()

@@ -44,15 +44,6 @@ use WPSDB\WPSDB;
 
 define('WPSDB_ROOT', plugin_dir_url(__FILE__));
 
-// Define the directory seperator if it isn't already
-if (!defined('DS')) {
-  if (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN') {
-    define('DS', '\\');
-  } else {
-    define('DS', '/');
-  }
-}
-
 function wp_sync_db_loaded()
 {
   // if neither WordPress admin nor running from wp-cli, exit quickly to prevent performance impact
