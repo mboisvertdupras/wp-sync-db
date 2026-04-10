@@ -64,6 +64,16 @@ class WPSDB_Base
     // allow devs to change the temporary prefix applied to the tables
     $this->temp_prefix = apply_filters('wpsdb_temporary_prefix', $this->temp_prefix);
 
+    /**
+     * Fires after WordPress has finished loading but before any headers are sent.
+     *
+     * Used to initialize plugin translations during the WordPress initialization process.
+     *
+     * @since 1.0
+     * @param callable $function_to_add The callback method to invoke.
+     * @param int      $priority        The execution priority (default: 10).
+     * @param int      $accepted_args   Number of arguments the callback accepts.
+     */
     add_action('init', $this->set_translations(...));
   }
 

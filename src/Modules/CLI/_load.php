@@ -27,6 +27,14 @@ if (function_exists('wp_sync_db_cli_loaded')) {
   deactivate_plugins('wp-sync-db-cli/wp-sync-db-cli.php');
 }
 
+/**
+ * Initialize the WP Sync DB CLI module once plugins are loaded.
+ *
+ * Registers the WP-CLI command if WP_CLI is defined and initializes the CLI class.
+ *
+ * @since 1.0
+ * @return void
+ */
 function wp_sync_db_module_cli_loaded(): void
 {
   if (! class_exists(\WPSDB\WPSDB_Base::class)) return;
@@ -40,6 +48,14 @@ function wp_sync_db_module_cli_loaded(): void
   $wpsdb_cli = new WPSDB_CLI(__FILE__);
 }
 
+/**
+ * Fires the CLI module initialization after WordPress has finished loading all plugins.
+ *
+ * @since 1.0
+ * @param callable $function_to_add The callback function to invoke.
+ * @param int      $priority        The execution priority (20).
+ * @param int      $accepted_args   Number of arguments the callback accepts.
+ */
 add_action('plugins_loaded', 'wp_sync_db_module_cli_loaded', 20);
 
 function wpsdb_migrate($profile)
