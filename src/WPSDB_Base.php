@@ -101,7 +101,7 @@ class WPSDB_Base
   {
     $this->set_time_limit();
 
-    if (function_exists('fsockopen') && str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
+    if (function_exists('fsockopen') && str_starts_with((string) $url, 'https://') && 'ajax_verify_connection_to_remote_site' == $scope) {
       $url_parts = parse_url((string) $url);
       $host = $url_parts['host'];
       if ($pf = @fsockopen($host, 443, $err, $err_string, 1)) {
@@ -113,7 +113,7 @@ class WPSDB_Base
       }
     }
 
-    $sslverify = ($this->settings['verify_ssl'] == 1);
+    $sslverify = (1 == $this->settings['verify_ssl']);
 
     $default_remote_post_timeout = apply_filters('wpsdb_default_remote_post_timeout', 60 * 20);
 
@@ -139,7 +139,7 @@ class WPSDB_Base
       $response['body'] = trim((string) $response['body'], "\xef\xbb\xbf");
     }
     if (is_wp_error($response)) {
-        if (str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
+        if (str_starts_with((string) $url, 'https://') && 'ajax_verify_connection_to_remote_site' == $scope) {
           return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
         }
         if (isset($response->errors['http_request_failed'][0]) && str_contains($response->errors['http_request_failed'][0], 'timed out')) {
@@ -149,7 +149,7 @@ class WPSDB_Base
           $url_bits = parse_url((string) $_POST['url']);
           if (str_contains((string) $_POST['url'], 'dev.') || str_contains((string) $_POST['url'], '.dev') || ! str_contains($url_bits['host'], '.')) {
             $this->error .= '<br />';
-            if ($_POST['intent'] == 'pull') {
+            if ('pull' == $_POST['intent']) {
               $this->error .= __('It appears that you might be trying to pull from a local environment. This will not work if <u>this</u> website happens to be located on a remote server, it would be impossible for this server to contact your local environment.', 'wp-sync-db');
             } else {
               $this->error .= __('It appears that you might be trying to push to a local environment. This will not work if <u>this</u> website happens to be located on a remote server, it would be impossible for this server to contact your local environment.', 'wp-sync-db');
@@ -163,10 +163,10 @@ class WPSDB_Base
         return false;
     }
     if ((int) $response['response']['code'] < 200 || (int) $response['response']['code'] > 399) {
-        if (str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
+        if (str_starts_with((string) $url, 'https://') && 'ajax_verify_connection_to_remote_site' == $scope) {
           return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
         }
-        if ($response['response']['code'] == '401') {
+        if ('401' == $response['response']['code']) {
           $this->error = __('The remote site is protected with Basic Authentication. Please enter the username and password above to continue. (401 Unauthorized)', 'wp-sync-db');
           $this->log_error($this->error, $response);
           return false;
@@ -175,8 +175,8 @@ class WPSDB_Base
         $this->log_error($this->error, $response);
         return false;
     }
-    if ($expecting_serial && is_serialized($response['body']) == false) {
-        if (str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
+    if ($expecting_serial && false === is_serialized($response['body'])) {
+        if (str_starts_with((string) $url, 'https://') && 'ajax_verify_connection_to_remote_site' == $scope) {
           return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
         }
 
@@ -184,8 +184,8 @@ class WPSDB_Base
         $this->log_error($this->error, $response);
         return false;
     }
-    if ($response['body'] === '0') {
-        if (str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
+    if ('0' === $response['body']) {
+        if (str_starts_with((string) $url, 'https://') && 'ajax_verify_connection_to_remote_site' == $scope) {
           return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
         }
 
@@ -194,7 +194,7 @@ class WPSDB_Base
         return false;
     }
 
-    if ($expecting_serial && is_serialized($response['body']) == true && $scope == 'ajax_verify_connection_to_remote_site') {
+    if ($expecting_serial && true === is_serialized($response['body']) && 'ajax_verify_connection_to_remote_site' == $scope) {
         $unserialized_response = unserialize($response['body']);
         if (isset($unserialized_response['error']) && '1' == $unserialized_response['error'] && str_starts_with((string) $url, 'https://')) {
           return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
@@ -269,7 +269,7 @@ class WPSDB_Base
       $error .= "Attempted to connect to: " . $this->attempting_to_connect_to . "\n\n";
     }
 
-    if ($additional_error_var !== false) {
+    if (false !== $additional_error_var) {
       $error .= print_r($additional_error_var, true) . "\n\n";
     }
 
@@ -347,10 +347,10 @@ class WPSDB_Base
     if (! function_exists('set_time_limit') || ! function_exists('ini_get')) return false;
 
     $current_max_execution_time = ini_get('max_execution_time');
-    $proposed_max_execution_time = ($current_max_execution_time == 30) ? 31 : 30;
+    $proposed_max_execution_time = (30 == $current_max_execution_time) ? 31 : 30;
     @set_time_limit($proposed_max_execution_time);
     $current_max_execution_time = ini_get('max_execution_time');
-    return ($proposed_max_execution_time == $current_max_execution_time);
+    return ($current_max_execution_time == $proposed_max_execution_time);
   }
 
   public function get_plugin_name(string|false $plugin = false): string|false
@@ -381,13 +381,13 @@ class WPSDB_Base
   public function get_tables(string $scope = 'regular'): array
   {
     global $wpdb;
-    $prefix = ($scope == 'temp' ? $this->temp_prefix : $wpdb->prefix);
+    $prefix = ('temp' == $scope ? $this->temp_prefix : $wpdb->prefix);
     $tables = $wpdb->get_results('SHOW FULL TABLES', ARRAY_N);
     foreach ($tables as $table) {
-      if (($scope == 'temp' || $scope == 'prefix') && !str_starts_with((string) $table[0], (string) $prefix)) {
+      if (('temp' == $scope || 'prefix' == $scope) && !str_starts_with((string) $table[0], (string) $prefix)) {
           continue;
       }
-      if ($table[1] == 'VIEW') {
+      if ('VIEW' == $table[1]) {
           continue;
       }
 

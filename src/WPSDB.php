@@ -514,8 +514,8 @@ class WPSDB extends WPSDB_Base
   public function is_json($string, $strict = false)
   {
     $json = @json_decode((string) $string, true);
-    if ($strict == true && !is_array($json)) return false;
-    return !($json == NULL || $json == false);
+    if (true === $strict && !is_array($json)) return false;
+    return !(null === $json || false === $json);
   }
 
   public function get_sql_dump_info($migration_type, $info_type): string
@@ -524,7 +524,7 @@ class WPSDB extends WPSDB_Base
       $this->session_salt = strtolower(wp_generate_password(5, false, false));
     }
     $datetime = date('YmdHis');
-    $ds = ($info_type == 'path' ? DIRECTORY_SEPARATOR : '/');
+    $ds = ('path' == $info_type ? DIRECTORY_SEPARATOR : '/');
     return sprintf('%s%s%s-%s-%s-%s.sql', $this->get_upload_info($info_type), $ds, sanitize_title_with_dashes(DB_NAME), $migration_type, $datetime, $this->session_salt);
   }
 
@@ -740,7 +740,7 @@ class WPSDB extends WPSDB_Base
     $this->check_ajax_referer('finalize-migration');
     global $wpdb;
     $return = '';
-    if ($_POST['intent'] == 'pull') {
+    if ('pull' == $_POST['intent']) {
       $return = $this->finalize_migration();
     } else {
       do_action('wpsdb_migration_complete', 'push', $_POST['url']);
@@ -836,7 +836,7 @@ class WPSDB extends WPSDB_Base
       echo $response;
       $this->display_errors();
       $maybe_errors = trim(ob_get_clean());
-      if (false === ($maybe_errors === '' || $maybe_errors === '0')) {
+      if (false === ('' === $maybe_errors || '0' === $maybe_errors)) {
         return $this->end_ajax($maybe_errors);
       }
     }
@@ -876,7 +876,7 @@ class WPSDB extends WPSDB_Base
       return $this->end_ajax($error_msg);
     }
 
-    if ($this->settings['allow_push'] != true) {
+    if (true != $this->settings['allow_push']) {
       return $this->end_ajax(__('The connection succeeded but the remote site is configured to reject push connections. You can change this in the "settings" tab on the remote site. (#133)', 'wp-sync-db'));
     }
 
@@ -922,9 +922,9 @@ class WPSDB extends WPSDB_Base
 
     $result = '';
     // checks if we're performing a backup, if so, continue with the backup and exit immediately after
-    if ($_POST['stage'] == 'backup' && $_POST['intent'] != 'savefile') {
+    if ('backup' == $_POST['stage'] && 'savefile' != $_POST['intent']) {
       // if performing a push we need to backup the REMOTE machine's DB
-      if ($_POST['intent'] == 'push') {
+      if ('push' == $_POST['intent']) {
         $data = $_POST;
         if (isset($data['nonce'])) {
           unset($data['nonce']);
@@ -946,29 +946,29 @@ class WPSDB extends WPSDB_Base
     }
 
     // Pull and push need to be handled differently for obvious reasons, trigger different code depending on the migration intent (push or pull)
-    if ($_POST['intent'] == 'push' || $_POST['intent'] == 'savefile') {
+    if ('push' == $_POST['intent'] || 'savefile' == $_POST['intent']) {
       $this->maximum_chunk_size = $this->get_bottleneck();
       if (isset($_POST['bottleneck'])) {
         $this->maximum_chunk_size = (int) $_POST['bottleneck'];
       }
-      if ($_POST['intent'] == 'push') {
+      if ('push' == $_POST['intent']) {
         $this->remote_key = $_POST['key'];
         $this->remote_url = $_POST['url'];
       }
       $sql_dump_file_name = $this->get_upload_info('path') . DIRECTORY_SEPARATOR;
       $sql_dump_file_name .= $this->format_dump_name($_POST['dump_filename']);
 
-      if ($_POST['intent'] == 'savefile') {
+      if ('savefile' == $_POST['intent']) {
         $this->fp = $this->open($sql_dump_file_name);
       }
       $result = $this->export_table($_POST['table']);
-      if ($_POST['intent'] == 'savefile') {
+      if ('savefile' == $_POST['intent']) {
         $this->close($this->fp);
       }
       ob_start();
       $this->display_errors();
       $maybe_errors = trim(ob_get_clean());
-      if (false === ($maybe_errors === '' || $maybe_errors === '0')) {
+      if (false === ('' === $maybe_errors || '0' === $maybe_errors)) {
         return $this->end_ajax($maybe_errors);
       }
       return $result;
@@ -994,7 +994,7 @@ class WPSDB extends WPSDB_Base
     ob_start();
     $this->display_errors();
     $maybe_errors = trim(ob_get_clean());
-    if (false === ($maybe_errors === '' || $maybe_errors === '0')) {
+    if (false === ('' === $maybe_errors || '0' === $maybe_errors)) {
       return $this->end_ajax($maybe_errors);
     }
     if (!str_contains((string) $response, ';')) {
@@ -1005,7 +1005,7 @@ class WPSDB extends WPSDB_Base
     $row_information = trim(substr(strrchr((string) $response, "\n"), 1));
     $row_information = explode(',', $row_information);
     $chunk = substr((string) $response, 0, strrpos((string) $response, ";\n") + 1);
-    if ($chunk !== '' && $chunk !== '0') {
+    if ('' !== $chunk && '0' !== $chunk) {
       $process_chunk_result = $this->process_chunk($chunk);
       if (true !== $process_chunk_result) {
         return $this->end_ajax($process_chunk_result);
@@ -1043,7 +1043,7 @@ class WPSDB extends WPSDB_Base
     $sql_dump_file_name .= $this->format_dump_name($_POST['dump_filename']);
     $file_created = file_exists($sql_dump_file_name);
     $this->fp = $this->open($sql_dump_file_name);
-    if ($file_created == false) {
+    if (false == $file_created) {
       $this->db_backup_header();
     }
     $result = $this->export_table($_POST['table']);
@@ -1053,7 +1053,7 @@ class WPSDB extends WPSDB_Base
     ob_start();
     $this->display_errors();
     $maybe_errors = trim(ob_get_clean());
-    if (false === ($maybe_errors === '' || $maybe_errors === '0')) {
+    if (false === ('' === $maybe_errors || '0' === $maybe_errors)) {
       return $this->end_ajax($maybe_errors);
     }
 
@@ -1077,7 +1077,7 @@ class WPSDB extends WPSDB_Base
       return $this->end_ajax($error_msg);
     }
 
-    if ($this->settings['allow_pull'] != true) {
+    if (true != $this->settings['allow_pull']) {
       return $this->end_ajax(__('The connection succeeded but the remote site is configured to reject pull connections. You can change this in the "settings" tab on the remote site. (#132)', 'wp-sync-db'));
     }
 
@@ -1095,7 +1095,7 @@ class WPSDB extends WPSDB_Base
   {
     $this->check_ajax_referer('initiate-migration');
     $this->form_data = $this->parse_migration_form_data($_POST['form_data']);
-    if ($_POST['intent'] == 'savefile') {
+    if ('savefile' == $_POST['intent']) {
 
       $return = [
         'code' => 200,
@@ -1149,12 +1149,12 @@ class WPSDB extends WPSDB_Base
         return $this->end_ajax(json_encode($return));
       }
 
-      if (isset($return['error']) && $return['error'] == 1) {
+      if (isset($return['error']) && 1 == $return['error']) {
         $return = ['wpsdb_error' => 1, 'body' => $return['message']];
         return $this->end_ajax(json_encode($return));
       }
 
-      if ($_POST['intent'] == 'pull') {
+      if ('pull' == $_POST['intent']) {
         // sets up our table to store 'ALTER' queries
         $create_alter_table_query = $this->get_create_alter_table_query();
         $process_chunk_result = $this->process_chunk($create_alter_table_query);
@@ -1163,7 +1163,7 @@ class WPSDB extends WPSDB_Base
         }
       }
 
-      if (!empty($this->form_data['create_backup']) && $_POST['intent'] == 'pull') {
+      if (!empty($this->form_data['create_backup']) && 'pull' == $_POST['intent']) {
         $return['dump_filename'] = basename((string) $this->get_sql_dump_info('backup', 'path'));
         $return['dump_filename'] = substr($return['dump_filename'], 0, -4);
         $return['dump_url'] = $this->get_sql_dump_info('backup', 'url');
@@ -1185,7 +1185,7 @@ class WPSDB extends WPSDB_Base
         $return['error'] = 0;
       } else {
         $return['error'] = 1;
-        if ($_POST['intent'] == 'pull') {
+        if ('pull' == $_POST['intent']) {
           $intent = __('pull', 'wp-sync-db');
         } else {
           $intent = __('push', 'wp-sync-db');
@@ -1200,13 +1200,13 @@ class WPSDB extends WPSDB_Base
     }
 
     $this->form_data = $this->parse_migration_form_data($_POST['form_data']);
-    if (!empty($this->form_data['create_backup']) && $_POST['intent'] == 'push') {
+    if (!empty($this->form_data['create_backup']) && 'push' == $_POST['intent']) {
       $return['dump_filename'] = basename((string) $this->get_sql_dump_info('backup', 'path'));
       $return['dump_filename'] = substr($return['dump_filename'], 0, -4);
       $return['dump_url'] = $this->get_sql_dump_info('backup', 'url');
     }
 
-    if ($_POST['intent'] == 'push') {
+    if ('push' == $_POST['intent']) {
       // sets up our table to store 'ALTER' queries
       $create_alter_table_query = $this->get_create_alter_table_query();
       $process_chunk_result = $this->process_chunk($create_alter_table_query);
@@ -1222,7 +1222,7 @@ class WPSDB extends WPSDB_Base
     $this->check_ajax_referer('save-profile');
     $profile = $this->parse_migration_form_data($_POST['profile']);
     $profile = wp_parse_args($profile, $this->checkbox_options);
-    if (isset($profile['save_migration_profile_option']) && $profile['save_migration_profile_option'] == 'new') {
+    if (isset($profile['save_migration_profile_option']) && 'new' == $profile['save_migration_profile_option']) {
       $profile['name'] = $profile['create_new_profile'];
       $this->settings['profiles'][] = $profile;
     } else {
@@ -1239,7 +1239,7 @@ class WPSDB extends WPSDB_Base
   public function ajax_save_setting()
   {
     $this->check_ajax_referer('save-setting');
-    $this->settings[$_POST['setting']] = ($_POST['checked'] == 'false' ? false : true);
+    $this->settings[$_POST['setting']] = ('false' == $_POST['checked'] ? false : true);
     update_option('wpsdb_settings', $this->settings);
     return $this->end_ajax();
   }
@@ -1300,7 +1300,7 @@ class WPSDB extends WPSDB_Base
       return $this->end_ajax(json_encode($return));
     }
 
-    if (isset($response['error']) && $response['error'] == 1) {
+    if (isset($response['error']) && 1 == $response['error']) {
       $return = ['wpsdb_error' => 1, 'body' => $response['message']];
       $this->log_error($response['message'], $response);
       return $this->end_ajax(json_encode($return));
@@ -1335,9 +1335,9 @@ class WPSDB extends WPSDB_Base
       return $this->end_ajax(serialize($return));
     }
 
-    if (!isset($this->settings['allow_' . $_POST['intent']]) || $this->settings['allow_' . $_POST['intent']] != true) {
+    if (!isset($this->settings['allow_' . $_POST['intent']]) || true != $this->settings['allow_' . $_POST['intent']]) {
       $return['error'] = 1;
-      if ($_POST['intent'] == 'pull') {
+      if ('pull' == $_POST['intent']) {
         $intent = __('pull', 'wp-sync-db');
       } else {
         $intent = __('push', 'wp-sync-db');
@@ -1420,7 +1420,7 @@ class WPSDB extends WPSDB_Base
   public function get_profile($profile_id)
   {
     --$profile_id;
-    if ($profile_id == '-1' || !isset($this->settings['profiles'][$profile_id])) {
+    if ('-1' == $profile_id || !isset($this->settings['profiles'][$profile_id])) {
       return $this->default_profile;
     }
     return $this->settings['profiles'][$profile_id];
@@ -1441,7 +1441,7 @@ class WPSDB extends WPSDB_Base
     );
     $return = [];
     foreach ($results as $result) {
-      $return[$result['TABLE_NAME']] = ($result['TABLE_ROWS'] == 0 ? 1 : (int) $result['TABLE_ROWS']);
+      $return[$result['TABLE_NAME']] = (0 == $result['TABLE_ROWS'] ? 1 : (int) $result['TABLE_ROWS']);
     }
     return $return;
   }
@@ -1513,7 +1513,7 @@ class WPSDB extends WPSDB_Base
       $calculated_bottleneck = min($calculated_bottleneck, $suhosin_limit - 1024);
     }
 
-    if ($type != 'max') {
+    if ('max' != $type) {
       $calculated_bottleneck = min($calculated_bottleneck, $this->settings['max_request']);
     }
 
@@ -1749,14 +1749,14 @@ class WPSDB extends WPSDB_Base
     $current_row = -1;
     if (!empty($_POST['current_row'])) {
       $temp_current_row = trim((string) $_POST['current_row']);
-      if ($temp_current_row !== '' && $temp_current_row !== '0') {
+      if ('' !== $temp_current_row && '0' !== $temp_current_row) {
         $current_row = (int) $temp_current_row;
       }
     }
 
-    if ($current_row == -1) {
+    if (-1 == $current_row) {
       // Add SQL statement to drop existing table
-      if ($this->form_data['action'] == 'savefile' || $_POST['stage'] == 'backup') {
+      if ('savefile' == $this->form_data['action'] || 'backup' == $_POST['stage']) {
         $this->stow("\n\n");
         $this->stow("#\n");
         $this->stow("# " . sprintf(__('Delete any existing table %s', 'wp-sync-db'), $this->backquote($table)) . "\n");
@@ -1769,7 +1769,7 @@ class WPSDB extends WPSDB_Base
 
       // Table structure
       // Comment in SQL-file
-      if ($this->form_data['action'] == 'savefile' || $_POST['stage'] == 'backup') {
+      if ('savefile' == $this->form_data['action'] || 'backup' == $_POST['stage']) {
         $this->stow("\n\n");
         $this->stow("#\n");
         $this->stow("# " . sprintf(__('Table structure of table %s', 'wp-sync-db'), $this->backquote($table)) . "\n");
@@ -1783,7 +1783,7 @@ class WPSDB extends WPSDB_Base
         return false;
       }
 
-      if ($this->form_data['action'] != 'savefile' && $_POST['stage'] != 'backup') {
+      if ('savefile' != $this->form_data['action'] && 'backup' != $_POST['stage']) {
         $create_table[0][1] = str_replace('CREATE TABLE `', 'CREATE TABLE `' . $temp_prefix, $create_table[0][1]);
       }
 
@@ -1799,7 +1799,7 @@ class WPSDB extends WPSDB_Base
       if (!empty($alter_table_query)) {
         $alter_table_name = $this->get_alter_table_name();
         $insert = sprintf("INSERT INTO %s ( `query` ) VALUES ( '%s' );\n", $this->backquote($alter_table_name), esc_sql($alter_table_query));
-        if ($this->form_data['action'] == 'savefile' || $_POST['stage'] == 'backup') {
+        if ('savefile' == $this->form_data['action'] || 'backup' == $_POST['stage']) {
           $process_chunk_result = $this->process_chunk($insert);
           if (true !== $process_chunk_result) {
             return $this->end_ajax($process_chunk_result);
@@ -1810,7 +1810,7 @@ class WPSDB extends WPSDB_Base
       }
 
       // Comment in SQL-file
-      if ($this->form_data['action'] == 'savefile' || $_POST['stage'] == 'backup') {
+      if ('savefile' == $this->form_data['action'] || 'backup' == $_POST['stage']) {
         $this->stow("\n\n");
         $this->stow("#\n");
         $this->stow('# ' . sprintf(__('Data contents of table %s', 'wp-sync-db'), $this->backquote($table)) . "\n");
@@ -1838,7 +1838,7 @@ class WPSDB extends WPSDB_Base
 
     $row_inc = $this->rows_per_segment;
     $row_start = 0;
-    if ($current_row != -1) {
+    if (-1 != $current_row) {
       $row_start = $current_row;
     }
 
@@ -1852,7 +1852,7 @@ class WPSDB extends WPSDB_Base
 
     $table_name = $table;
 
-    if ($this->form_data['action'] != 'savefile' && $_POST['stage'] != 'backup') {
+    if ('savefile' != $this->form_data['action'] && 'backup' != $_POST['stage']) {
       $table_name = $temp_prefix . $table;
     }
 
@@ -1860,7 +1860,7 @@ class WPSDB extends WPSDB_Base
     $use_primary_keys = true;
     foreach ($table_structure as $col) {
       $field_set[] = $this->backquote($col->Field);
-      if ($col->Key == 'PRI' && true == $use_primary_keys) {
+      if ('PRI' == $col->Key && true === $use_primary_keys) {
         if (!str_contains((string) $col->Type, 'int')) {
           $use_primary_keys = false;
           $this->primary_keys = [];
@@ -1873,7 +1873,7 @@ class WPSDB extends WPSDB_Base
     $first_select = true;
     if (!empty($_POST['primary_keys'])) {
       $_POST['primary_keys'] = trim((string) $_POST['primary_keys']);
-      if (isset($_POST['primary_keys']) && ($_POST['primary_keys'] !== '' && $_POST['primary_keys'] !== '0') && is_serialized($_POST['primary_keys'])) {
+      if (isset($_POST['primary_keys']) && ('' !== $_POST['primary_keys'] && '0' !== $_POST['primary_keys']) && is_serialized($_POST['primary_keys'])) {
         $this->primary_keys = unserialize(stripslashes($_POST['primary_keys']));
         $first_select = false;
       }
@@ -1996,7 +1996,7 @@ class WPSDB extends WPSDB_Base
                 $values[] = 'NULL';
               } else {
 
-                if (is_multisite() && 'path' == $key && $_POST['stage'] != 'backup' && ($wpdb->site == $table || $wpdb->blogs == $table)) {
+                if (is_multisite() && 'path' == $key && 'backup' != $_POST['stage'] && ($wpdb->site == $table || $wpdb->blogs == $table)) {
                   $old_path_current_site = $this->get_path_current_site();
                   if (!empty($_POST['path_current_site'])) {
                     $new_path_current_site = stripslashes((string) $_POST['path_current_site']);
@@ -2010,7 +2010,7 @@ class WPSDB extends WPSDB_Base
                   }
                 }
 
-                if (is_multisite() && 'domain' == $key && $_POST['stage'] != 'backup' && ($wpdb->site == $table || $wpdb->blogs == $table)) {
+                if (is_multisite() && 'domain' == $key && 'backup' != $_POST['stage'] && ($wpdb->site == $table || $wpdb->blogs == $table)) {
                   if (!empty($_POST['domain_current_site'])) {
                     $main_domain_replace = $_POST['domain_current_site'];
                   } else {
@@ -2026,7 +2026,7 @@ class WPSDB extends WPSDB_Base
                 }
 
                 if ('guid' != $key || (isset($this->form_data['replace_guids']) && $this->table_is('posts', $table))) {
-                  if ($_POST['stage'] != 'backup') {
+                  if ('backup' != $_POST['stage']) {
                     $value = $this->recursive_unserialize_replace($value);
                   }
                 }
@@ -2091,20 +2091,20 @@ class WPSDB extends WPSDB_Base
     } while (count($table_data) > 0);
 
     // Create footer/closing comment in SQL-file
-    if ($this->form_data['action'] == 'savefile' || $_POST['stage'] == 'backup') {
+    if ('savefile' == $this->form_data['action'] || 'backup' == $_POST['stage']) {
       $this->stow("\n");
       $this->stow("#\n");
       $this->stow("# " . sprintf(__('End of data contents of table %s', 'wp-sync-db'), $this->backquote($table)) . "\n");
       $this->stow("# --------------------------------------------------------\n");
       $this->stow("\n");
 
-      if ($_POST['last_table'] == '1') {
+      if ('1' == $_POST['last_table']) {
         $this->stow("#\n");
         $this->stow("# Add constraints back in\n");
         $this->stow("#\n\n");
         $this->stow($this->get_alter_queries());
         $alter_table_name = $this->get_alter_table_name();
-        if ($this->form_data['action'] == 'savefile') {
+        if ('savefile' == $this->form_data['action']) {
           $wpdb->query("DROP TABLE IF EXISTS " . $this->backquote($alter_table_name) . ";");
         }
       }
@@ -2255,7 +2255,7 @@ class WPSDB extends WPSDB_Base
   public function stow(string $query_line, $replace = true)
   {
     $this->current_chunk .= $query_line;
-    if ($this->form_data['action'] == 'savefile' || $_POST['stage'] == 'backup') {
+    if ('savefile' == $this->form_data['action'] || 'backup' == $_POST['stage']) {
       if ($this->gzip() && isset($this->form_data['gzip_file'])) {
         if (!@gzwrite($this->fp, $query_line)) {
           $this->error = __('Failed to write the gzipped SQL data to the file. (#127)', 'wp-sync-db');
@@ -2267,7 +2267,7 @@ class WPSDB extends WPSDB_Base
           return false;
         }
       }
-    } else if ($_POST['intent'] == 'pull') {
+    } else if ('pull' == $_POST['intent']) {
       echo $query_line;
     }
   }
@@ -2275,7 +2275,7 @@ class WPSDB extends WPSDB_Base
   // Called in the $this->stow function once our chunk buffer is full, will transfer the SQL to the remote server for importing
   public function transfer_chunk()
   {
-    if ($_POST['intent'] == 'savefile' || $_POST['stage'] == 'backup') {
+    if ('savefile' == $_POST['intent'] || 'backup' == $_POST['stage']) {
       $this->close($this->fp);
       return $this->end_ajax(json_encode(
         [
@@ -2285,12 +2285,12 @@ class WPSDB extends WPSDB_Base
       ));
     }
 
-    if ($_POST['intent'] == 'pull') {
+    if ('pull' == $_POST['intent']) {
       return $this->end_ajax($this->row_tracker . ',' . serialize($this->primary_keys));
     }
 
     $chunk_gzipped = '0';
-    if (isset($_POST['gzip']) && $_POST['gzip'] == '1' && $this->gzip()) {
+    if (isset($_POST['gzip']) && '1' == $_POST['gzip'] && $this->gzip()) {
       $this->current_chunk = gzcompress((string) $this->current_chunk);
       $chunk_gzipped = '1';
     }
@@ -2310,7 +2310,7 @@ class WPSDB extends WPSDB_Base
     $this->display_errors();
     $response = ob_get_clean();
     $response .= trim($response);
-    if ($response !== '' && $response !== '0') {
+    if ('' !== $response && '0' !== $response) {
       return $this->end_ajax($response);
     }
     return $this->end_ajax(json_encode(
@@ -2327,7 +2327,7 @@ class WPSDB extends WPSDB_Base
    */
   public function backquote(?string $a_name): array|string|null
   {
-    if ($a_name !== null && $a_name !== '' && $a_name !== '0' && $a_name != '*') {
+    if (null !== $a_name && '' !== $a_name && '0' !== $a_name && '*' != $a_name) {
       if (is_array($a_name)) {
         $result = [];
         reset($a_name);
@@ -2591,7 +2591,7 @@ class WPSDB extends WPSDB_Base
   public function get_path_from_url($url)
   {
     $parts = parse_url((string) $url);
-    return (isset($parts['path']) && ($parts['path'] !== '' && $parts['path'] !== '0')) ? trailingslashit($parts['path']) : '/';
+    return (isset($parts['path']) && ('' !== $parts['path'] && '0' !== $parts['path'])) ? trailingslashit($parts['path']) : '/';
   }
 
   public function get_path_current_site()
@@ -2625,7 +2625,7 @@ class WPSDB extends WPSDB_Base
 
   public function maybe_checked($option): void
   {
-    echo (isset($option) && $option == '1') ? ' checked="checked"' : '';
+    echo (isset($option) && '1' == $option) ? ' checked="checked"' : '';
   }
 
   public function ajax_cancel_migration(): void
@@ -2666,7 +2666,7 @@ class WPSDB extends WPSDB_Base
 
     $this->form_data = $this->parse_migration_form_data($filtered_post['form_data']);
 
-    if ($filtered_post['stage'] == 'backup') {
+    if ('backup' == $filtered_post['stage']) {
       $this->delete_export_file($filtered_post['dump_filename'], true);
     } else {
       $this->delete_temporary_tables($filtered_post['temp_prefix']);
