@@ -6,24 +6,37 @@ namespace WPSDB;
 class WPSDB_Base
 {
   protected $settings;
-  protected $plugin_file_path;
   protected $plugin_dir_path;
-  protected $plugin_folder_name;
+
+  protected string $plugin_folder_name;
+
   protected $plugin_basename;
-  protected $plugin_base;
+
+  protected string $plugin_base;
+
   protected $plugin_version;
-  protected $template_dir;
-  protected $plugin_title;
-  protected $transient_timeout;
-  protected $transient_retry_timeout;
+
+  protected string $template_dir;
+
+  protected string $plugin_title;
+
+  protected int $transient_timeout;
+
+  protected int $transient_retry_timeout;
+
   protected $multipart_boundary = 'bWH4JVmYCnf6GfXacrcc';
+
   protected $attempting_to_connect_to;
+
   protected $error;
+
   protected $temp_prefix = '_mig_';
-  protected $invalid_content_verification_error;
+
+  protected string $invalid_content_verification_error;
+
   protected $doing_cli_migration = false;
 
-  function __construct($plugin_file_path)
+  public function __construct(protected $plugin_file_path)
   {
     $this->settings = get_option('wpsdb_settings');
     if (!is_array($this->settings)) {
@@ -34,13 +47,11 @@ class WPSDB_Base
 
     $this->transient_timeout = 60 * 60 * 12;
     $this->transient_retry_timeout = 60 * 60 * 2;
-
-    $this->plugin_file_path = $plugin_file_path;
-    $this->plugin_dir_path = plugin_dir_path($plugin_file_path);
+    $this->plugin_dir_path = plugin_dir_path($this->plugin_file_path);
     $this->plugin_folder_name = basename($this->plugin_dir_path);
-    $this->plugin_basename = plugin_basename($plugin_file_path);
+    $this->plugin_basename = plugin_basename($this->plugin_file_path);
     $this->template_dir = $this->plugin_dir_path . 'template' . DIRECTORY_SEPARATOR;
-    $this->plugin_title = ucwords(str_ireplace('-', ' ', basename($plugin_file_path)));
+    $this->plugin_title = ucwords(str_ireplace('-', ' ', basename((string) $this->plugin_file_path)));
     $this->plugin_title = str_ireplace(['db', 'wp', '.php'], ['DB', 'WP', ''], $this->plugin_title);
 
     if (is_multisite()) {
@@ -52,36 +63,35 @@ class WPSDB_Base
     // allow devs to change the temporary prefix applied to the tables
     $this->temp_prefix = apply_filters('wpsdb_temporary_prefix', $this->temp_prefix);
 
-    add_action('init', [$this, 'set_translations']);
+    add_action('init', $this->set_translations(...));
   }
 
-  function template($template)
+  public function template(string $template): void
   {
     include $this->template_dir . $template . '.php';
   }
 
-  function open_ssl_enabled()
+  public function open_ssl_enabled(): bool
   {
     if (defined('OPENSSL_VERSION_TEXT')) {
       return true;
-    } else {
-      return false;
     }
+    return false;
   }
 
-  function set_time_limit()
+  public function set_time_limit(): void
   {
     if (!function_exists('ini_get') || !ini_get('safe_mode')) {
       @set_time_limit(0);
     }
   }
 
-  function remote_post($url, $data, $scope, $args = [], $expecting_serial = false)
+  public function remote_post($url, $data, $scope, $args = [], $expecting_serial = false)
   {
     $this->set_time_limit();
 
-    if (function_exists('fsockopen') && strpos($url, 'https://') === 0 && $scope == 'ajax_verify_connection_to_remote_site') {
-      $url_parts = parse_url($url);
+    if (function_exists('fsockopen') && str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
+      $url_parts = parse_url((string) $url);
       $host = $url_parts['host'];
       if ($pf = @fsockopen($host, 443, $err, $err_string, 1)) {
         // worked
@@ -92,7 +102,7 @@ class WPSDB_Base
       }
     }
 
-    $sslverify = ($this->settings['verify_ssl'] == 1 ? true : false);
+    $sslverify = ($this->settings['verify_ssl'] == 1);
 
     $default_remote_post_timeout = apply_filters('wpsdb_default_remote_post_timeout', 60 * 20);
 
@@ -106,6 +116,7 @@ class WPSDB_Base
     if (! isset($args['body'])) {
       $args['body'] = $this->array_to_multipart($data);
     }
+
     $args['headers']['Content-Type'] = 'multipart/form-data; boundary=' . $this->multipart_boundary;
     $args['headers']['Referer'] = network_admin_url('admin-ajax.php');
 
@@ -114,76 +125,85 @@ class WPSDB_Base
     $response = wp_remote_post($url, $args);
 
     if (! is_wp_error($response)) {
-      $response['body'] = trim($response['body'], "\xef\xbb\xbf");
+      $response['body'] = trim((string) $response['body'], "\xef\xbb\xbf");
     }
-
     if (is_wp_error($response)) {
-      if (strpos($url, 'https://') === 0 && $scope == 'ajax_verify_connection_to_remote_site') {
-        return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
-      } else if (isset($response->errors['http_request_failed'][0]) && strstr($response->errors['http_request_failed'][0], 'timed out')) {
-        $this->error = sprintf(__('The connection to the remote server has timed out, no changes have been committed. (#134 - scope: %s)', 'wp-sync-db'), $scope);
-      } else if (isset($response->errors['http_request_failed'][0]) && (strstr($response->errors['http_request_failed'][0], 'Could not resolve host') || strstr($response->errors['http_request_failed'][0], 'couldn\'t connect to host'))) {
-        $this->error = sprintf(__('We could not find: %s. Are you sure this is the correct URL?', 'wp-sync-db'), $_POST['url']);
-        $url_bits = parse_url($_POST['url']);
-        if (strstr($_POST['url'], 'dev.') || strstr($_POST['url'], '.dev') || ! strstr($url_bits['host'], '.')) {
-          $this->error .= '<br />';
-          if ($_POST['intent'] == 'pull') {
-            $this->error .= __('It appears that you might be trying to pull from a local environment. This will not work if <u>this</u> website happens to be located on a remote server, it would be impossible for this server to contact your local environment.', 'wp-sync-db');
-          } else {
-            $this->error .= __('It appears that you might be trying to push to a local environment. This will not work if <u>this</u> website happens to be located on a remote server, it would be impossible for this server to contact your local environment.', 'wp-sync-db');
-          }
+        if (str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
+          return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
         }
-      } else {
-        $this->error = sprintf(__('The connection failed, an unexpected error occurred, please contact support. (#121 - scope: %s)', 'wp-sync-db'), $scope);
-      }
-      $this->log_error($this->error, $response);
-      return false;
-    } elseif ((int) $response['response']['code'] < 200 || (int) $response['response']['code'] > 399) {
-      if (strpos($url, 'https://') === 0 && $scope == 'ajax_verify_connection_to_remote_site') {
-        return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
-      } else if ($response['response']['code'] == '401') {
-        $this->error = __('The remote site is protected with Basic Authentication. Please enter the username and password above to continue. (401 Unauthorized)', 'wp-sync-db');
+        if (isset($response->errors['http_request_failed'][0]) && strstr($response->errors['http_request_failed'][0], 'timed out')) {
+          $this->error = sprintf(__('The connection to the remote server has timed out, no changes have been committed. (#134 - scope: %s)', 'wp-sync-db'), $scope);
+        } else if (isset($response->errors['http_request_failed'][0]) && (strstr($response->errors['http_request_failed'][0], 'Could not resolve host') || strstr($response->errors['http_request_failed'][0], "couldn't connect to host"))) {
+          $this->error = sprintf(__('We could not find: %s. Are you sure this is the correct URL?', 'wp-sync-db'), $_POST['url']);
+          $url_bits = parse_url((string) $_POST['url']);
+          if (strstr((string) $_POST['url'], 'dev.') || strstr((string) $_POST['url'], '.dev') || ! strstr($url_bits['host'], '.')) {
+            $this->error .= '<br />';
+            if ($_POST['intent'] == 'pull') {
+              $this->error .= __('It appears that you might be trying to pull from a local environment. This will not work if <u>this</u> website happens to be located on a remote server, it would be impossible for this server to contact your local environment.', 'wp-sync-db');
+            } else {
+              $this->error .= __('It appears that you might be trying to push to a local environment. This will not work if <u>this</u> website happens to be located on a remote server, it would be impossible for this server to contact your local environment.', 'wp-sync-db');
+            }
+          }
+        } else {
+          $this->error = sprintf(__('The connection failed, an unexpected error occurred, please contact support. (#121 - scope: %s)', 'wp-sync-db'), $scope);
+        }
+
         $this->log_error($this->error, $response);
         return false;
-      } else {
+    }
+    if ((int) $response['response']['code'] < 200 || (int) $response['response']['code'] > 399) {
+        if (str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
+          return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
+        }
+        if ($response['response']['code'] == '401') {
+          $this->error = __('The remote site is protected with Basic Authentication. Please enter the username and password above to continue. (401 Unauthorized)', 'wp-sync-db');
+          $this->log_error($this->error, $response);
+          return false;
+        }
         $this->error = sprintf(__('Unable to connect to the remote server, please check the connection details - %1$s %2$s (#129 - scope: %3$s)', 'wp-sync-db'), $response['response']['code'], $response['response']['message'], $scope);
         $this->log_error($this->error, $response);
         return false;
-      }
-    } elseif ($expecting_serial && is_serialized($response['body']) == false) {
-      if (strpos($url, 'https://') === 0 && $scope == 'ajax_verify_connection_to_remote_site') {
-        return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
-      }
-      $this->error = __('There was a problem with the AJAX request, we were expecting a serialized response, instead we received:<br />', 'wp-sync-db') . htmlentities($response['body']);
-      $this->log_error($this->error, $response);
-      return false;
-    } elseif ($response['body'] === '0') {
-      if (strpos($url, 'https://') === 0 && $scope == 'ajax_verify_connection_to_remote_site') {
-        return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
-      }
-      $this->error = sprintf(__('WP Sync DB does not seem to be installed or active on the remote site. (#131 - scope: %s)', 'wp-sync-db'), $scope);
-      $this->log_error($this->error, $response);
-      return false;
-    } elseif ($expecting_serial && is_serialized($response['body']) == true && $scope == 'ajax_verify_connection_to_remote_site') {
-      $unserialized_response = unserialize($response['body']);
-      if (isset($unserialized_response['error']) && '1' == $unserialized_response['error'] && strpos($url, 'https://') === 0) {
-        return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
-      }
+    }
+    if ($expecting_serial && is_serialized($response['body']) == false) {
+        if (str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
+          return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
+        }
+
+        $this->error = __('There was a problem with the AJAX request, we were expecting a serialized response, instead we received:<br />', 'wp-sync-db') . htmlentities((string) $response['body']);
+        $this->log_error($this->error, $response);
+        return false;
+    }
+    if ($response['body'] === '0') {
+        if (str_starts_with((string) $url, 'https://') && $scope == 'ajax_verify_connection_to_remote_site') {
+          return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
+        }
+
+        $this->error = sprintf(__('WP Sync DB does not seem to be installed or active on the remote site. (#131 - scope: %s)', 'wp-sync-db'), $scope);
+        $this->log_error($this->error, $response);
+        return false;
+    }
+
+    if ($expecting_serial && is_serialized($response['body']) == true && $scope == 'ajax_verify_connection_to_remote_site') {
+        $unserialized_response = unserialize($response['body']);
+        if (isset($unserialized_response['error']) && '1' == $unserialized_response['error'] && str_starts_with((string) $url, 'https://')) {
+          return $this->retry_remote_post($url, $data, $scope, $args, $expecting_serial);
+        }
     }
 
     return $response['body'];
   }
 
-  function retry_remote_post($url, $data, $scope, $args = [], $expecting_serial = false)
+  public function retry_remote_post($url, $data, $scope, $args = [], $expecting_serial = false)
   {
     $url = substr_replace($url, 'http', 0, 5);
     if ($response = $this->remote_post($url, $data, $scope, $args, $expecting_serial)) {
       return $response;
     }
+
     return false;
   }
 
-  function array_to_multipart($data)
+  public function array_to_multipart($data)
   {
     if (!$data || !is_array($data)) {
       return $data;
@@ -208,12 +228,10 @@ class WPSDB_Base
       $result .= "\r\n\r\n" . $value . "\r\n";
     }
 
-    $result .= "--" . $this->multipart_boundary . "--\r\n";
-
-    return $result;
+    return $result . ("--" . $this->multipart_boundary . "--\r\n");
   }
 
-  function file_to_multipart($file)
+  public function file_to_multipart($file): false|string
   {
     $result = '';
 
@@ -223,89 +241,100 @@ class WPSDB_Base
     $contents = file_get_contents($file);
 
     $result .= '--' . $this->multipart_boundary . "\r\n" .
-      sprintf('Content-Disposition: form-data; name="media[]"; filename="%s"', basename($file));
+      sprintf('Content-Disposition: form-data; name="media[]"; filename="%s"', basename((string) $file));
 
     $result .= sprintf("\r\nContent-Type: %s", $filetype['type']);
 
     $result .= "\r\n\r\n" . $contents . "\r\n";
 
-    $result .= "--" . $this->multipart_boundary . "--\r\n";
-
-    return $result;
+    return $result . ("--" . $this->multipart_boundary . "--\r\n");
   }
 
-  function log_error($wpsdb_error, $additional_error_var = false)
+  public function log_error(string $wpsdb_error, $additional_error_var = false): void
   {
     $error_header = "********************************************\n******  Log date: " . date('Y/m/d H:i:s') . " ******\n********************************************\n\n";
     $error = $error_header . "WPSDB Error: " . $wpsdb_error . "\n\n";
     if (! empty($this->attempting_to_connect_to)) {
       $error .= "Attempted to connect to: " . $this->attempting_to_connect_to . "\n\n";
     }
+
     if ($additional_error_var !== false) {
       $error .= print_r($additional_error_var, true) . "\n\n";
     }
+
     $log = get_option('wpsdb_error_log');
     if ($log) {
       $log = $log . $error;
     } else {
       $log = $error;
     }
+
     update_option('wpsdb_error_log', $log);
   }
 
-  function display_errors()
+  public function display_errors(): bool
   {
     if (! empty($this->error)) {
       echo $this->error;
       $this->error = '';
       return true;
     }
+
     return false;
   }
 
-  function filter_post_elements($post_array, $accepted_elements)
+  public function filter_post_elements(array $post_array, $accepted_elements): array
   {
     if (isset($post_array['form_data'])) {
       $post_array['form_data'] = stripslashes($post_array['form_data']);
     }
+
     $accepted_elements[] = 'sig';
     return array_intersect_key($post_array, array_flip($accepted_elements));
   }
 
-  function create_signature($data, $key)
+  public function create_signature(array $data, $key): string
   {
     if (isset($data['sig'])) {
       unset($data['sig']);
     }
+
     $flat_data = implode('', $data);
-    return base64_encode(hash_hmac('sha1', $flat_data, $key, true));
+    return base64_encode(hash_hmac('sha1', $flat_data, (string) $key, true));
   }
 
-  function verify_signature($data, $key)
+  public function verify_signature(array $data, $key)
   {
     if (empty($data['sig'])) {
       return false;
     }
+
     if (isset($data['nonce'])) {
       unset($data['nonce']);
     }
+
     $temp = $data;
     $computed_signature = $this->create_signature($temp, $key);
     return $computed_signature === $data['sig'];
   }
 
-  function diverse_array($vector)
+  /**
+   * @return non-empty-array[]
+   */
+  public function diverse_array($vector): array
   {
     $result = [];
     foreach ($vector as $key1 => $value1)
       foreach ($value1 as $key2 => $value2)
         $result[$key2][$key1] = $value2;
+
     return $result;
   }
 
-  function set_time_limit_available()
+  public function set_time_limit_available()
   {
     if (! function_exists('set_time_limit') || ! function_exists('ini_get')) return false;
+
     $current_max_execution_time = ini_get('max_execution_time');
     $proposed_max_execution_time = ($current_max_execution_time == 30) ? 31 : 30;
     @set_time_limit($proposed_max_execution_time);
@@ -313,7 +342,7 @@ class WPSDB_Base
     return ($proposed_max_execution_time == $current_max_execution_time);
   }
 
-  function get_plugin_name($plugin = false)
+  public function get_plugin_name($plugin = false)
   {
     if (!is_admin()) return false;
 
@@ -328,43 +357,48 @@ class WPSDB_Base
     return $plugins[$plugin_basename]['Name'];
   }
 
-  function get_class_props()
+  public function get_class_props(): array
   {
     return get_object_vars($this);
   }
 
   // Get only the table beginning with our DB prefix or temporary prefix, also skip views
-  function get_tables($scope = 'regular')
+  public function get_tables($scope = 'regular')
   {
     global $wpdb;
     $prefix = ($scope == 'temp' ? $this->temp_prefix : $wpdb->prefix);
     $tables = $wpdb->get_results('SHOW FULL TABLES', ARRAY_N);
     foreach ($tables as $table) {
-      if ((($scope == 'temp' || $scope == 'prefix') && 0 !== strpos($table[0], $prefix)) || $table[1] == 'VIEW') {
-        continue;
+      if (($scope == 'temp' || $scope == 'prefix') && !str_starts_with((string) $table[0], (string) $prefix)) {
+          continue;
       }
+      if ($table[1] == 'VIEW') {
+          continue;
+      }
+
       $clean_tables[] = $table[0];
     }
+
     return apply_filters('wpsdb_tables', $clean_tables, $scope);
   }
 
-  function plugins_dir()
+  public function plugins_dir(): string
   {
     $path = untrailingslashit($this->plugin_dir_path);
     return substr($path, 0, strrpos($path, DIRECTORY_SEPARATOR)) . DIRECTORY_SEPARATOR;
   }
 
-  function get_plugin_file_path()
+  public function get_plugin_file_path()
   {
     return $this->plugin_file_path;
   }
 
-  function set_cli_migration()
+  public function set_cli_migration(): void
   {
     $this->doing_cli_migration = true;
   }
 
-  function end_ajax($return = false)
+  public function end_ajax($return = false)
   {
     if (defined('DOING_WPSDB_TESTS') || $this->doing_cli_migration) {
       return (false === $return) ? NULL : $return;
@@ -374,9 +408,10 @@ class WPSDB_Base
     exit;
   }
 
-  function check_ajax_referer($action)
+  public function check_ajax_referer($action): void
   {
     if (defined('DOING_WPSDB_TESTS') || $this->doing_cli_migration) return;
+
     $result = check_ajax_referer($action, 'nonce', false);
     if (false === $result) {
       $return = ['wpsdb_error' => 1, 'body' => sprintf(__('Invalid nonce for: %s', 'wp-sync-db'), $action)];
@@ -391,7 +426,7 @@ class WPSDB_Base
     }
   }
 
-  public function set_translations()
+  public function set_translations(): void
   {
     $this->invalid_content_verification_error = __('Invalid content verification signature, please verify the connection information on the remote site and try again.', 'wp-sync-db');
   }

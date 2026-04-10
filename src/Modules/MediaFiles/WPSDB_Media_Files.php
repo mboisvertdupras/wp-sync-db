@@ -11,36 +11,37 @@ use WPSDB\WPSDB_Base;
 class WPSDB_Media_Files extends WPSDB_Base
 {
   protected $files_to_migrate;
+
   protected $responding_to_get_remote_media_listing = false;
 
-  function __construct($plugin_file_path)
+  public function __construct($plugin_file_path)
   {
     parent::__construct($plugin_file_path);
 
-    add_action('wpsdb_after_advanced_options', [$this, 'migration_form_controls']);
-    add_action('wpsdb_load_assets', [$this, 'load_assets']);
-    add_filter('wpsdb_accepted_profile_fields', [$this, 'accepted_profile_fields']);
-    add_filter('wpsdb_establish_remote_connection_data', [$this, 'establish_remote_connection_data']);
-    add_filter('wpsdb_nonces', [$this, 'add_nonces']);
+    add_action('wpsdb_after_advanced_options', $this->migration_form_controls(...));
+    add_action('wpsdb_load_assets', $this->load_assets(...));
+    add_filter('wpsdb_accepted_profile_fields', $this->accepted_profile_fields(...));
+    add_filter('wpsdb_establish_remote_connection_data', $this->establish_remote_connection_data(...));
+    add_filter('wpsdb_nonces', $this->add_nonces(...));
 
     // compatibility with CLI migraitons
-    add_filter('wpsdb_cli_finalize_migration', [$this, 'cli_migration'], 10, 4);
+    add_filter('wpsdb_cli_finalize_migration', $this->cli_migration(...), 10, 4);
 
     // internal AJAX handlers
-    add_action('wp_ajax_wpsdbmf_determine_media_to_migrate', [$this, 'ajax_determine_media_to_migrate']);
-    add_action('wp_ajax_wpsdbmf_migrate_media', [$this, 'ajax_migrate_media']);
+    add_action('wp_ajax_wpsdbmf_determine_media_to_migrate', $this->ajax_determine_media_to_migrate(...));
+    add_action('wp_ajax_wpsdbmf_migrate_media', $this->ajax_migrate_media(...));
 
     // external AJAX handlers
-    add_action('wp_ajax_nopriv_wpsdbmf_get_remote_media_listing', [$this, 'respond_to_get_remote_media_listing']);
-    add_action('wp_ajax_nopriv_wpsdbmf_push_request', [$this, 'respond_to_push_request']);
-    add_action('wp_ajax_nopriv_wpsdbmf_remove_local_attachments', [$this, 'respond_to_remove_local_attachments']);
+    add_action('wp_ajax_nopriv_wpsdbmf_get_remote_media_listing', $this->respond_to_get_remote_media_listing(...));
+    add_action('wp_ajax_nopriv_wpsdbmf_push_request', $this->respond_to_push_request(...));
+    add_action('wp_ajax_nopriv_wpsdbmf_remove_local_attachments', $this->respond_to_remove_local_attachments(...));
   }
 
-  function get_local_attachments()
+  public function get_local_attachments(): array
   {
     global $wpdb;
     $prefix = $wpdb->prefix;
-    $temp_prefix = stripslashes($_POST['temp_prefix']);
+    $temp_prefix = stripslashes((string) $_POST['temp_prefix']);
 
     /*
 		* We determine which media files need migrating BEFORE the database migration is finalized.
@@ -56,8 +57,8 @@ class WPSDB_Media_Files extends WPSDB_Base
 
       $local_tables = array_flip($this->get_tables());
 
-      $posts_table_name = "{$temp_prefix}{$prefix}posts";
-      $postmeta_table_name = "{$temp_prefix}{$prefix}postmeta";
+      $posts_table_name = sprintf('%s%sposts', $temp_prefix, $prefix);
+      $postmeta_table_name = sprintf('%s%spostmeta', $temp_prefix, $prefix);
 
       if (isset($local_tables[$posts_table_name]) && isset($local_tables[$postmeta_table_name])) {
         $prefix = $temp_prefix . $prefix;
@@ -77,11 +78,12 @@ class WPSDB_Media_Files extends WPSDB_Base
       $blogs = $this->get_blogs();
       $prefix = $wpdb->prefix;
       foreach ($blogs as $blog) {
-        $posts_table_name = "{$temp_prefix}{$prefix}{$blog}_posts";
-        $postmeta_table_name = "{$temp_prefix}{$prefix}{$blog}_postmeta";
+        $posts_table_name = sprintf('%s%s%s_posts', $temp_prefix, $prefix, $blog);
+        $postmeta_table_name = sprintf('%s%s%s_postmeta', $temp_prefix, $prefix, $blog);
         if (isset($local_tables[$posts_table_name]) && isset($local_tables[$postmeta_table_name])) {
           $prefix = $temp_prefix . $prefix;
         }
+
         $attachments = $wpdb->get_results(
           "SELECT `{$prefix}{$blog}_posts`.`post_modified_gmt` AS 'date', pm1.`meta_value` AS 'file', pm2.`meta_value` AS 'metadata', {$blog} AS 'blog_id'
 					FROM `{$prefix}{$blog}_posts`
@@ -95,13 +97,15 @@ class WPSDB_Media_Files extends WPSDB_Base
       }
     }
 
-    $local_attachments = array_map([$this, 'process_attachment_data'], $local_attachments);
-    $local_attachments = array_filter($local_attachments);
+    $local_attachments = array_map($this->process_attachment_data(...), $local_attachments);
 
-    return $local_attachments;
+    return array_filter($local_attachments);
   }
 
-  function get_flat_attachments($attachments)
+  /**
+   * @return mixed[]
+   */
+  public function get_flat_attachments($attachments): array
   {
     $flat_attachments = [];
     foreach ($attachments as $attachment) {
@@ -110,10 +114,11 @@ class WPSDB_Media_Files extends WPSDB_Base
         $flat_attachments = array_merge($flat_attachments, $attachment['sizes']);
       }
     }
+
     return $flat_attachments;
   }
 
-  function process_attachment_data($attachment)
+  public function process_attachment_data(array $attachment): array
   {
     if (isset($attachment['blog_id'])) { // used for multisite
       if (defined('UPLOADBLOGSDIR')) {
@@ -121,23 +126,27 @@ class WPSDB_Media_Files extends WPSDB_Base
       } else {
         $upload_dir = sprintf('sites/%s/', $attachment['blog_id']);
       }
+
       $attachment['file'] = $upload_dir . $attachment['file'];
     }
-    $upload_dir = str_replace(basename($attachment['file']), '', $attachment['file']);
+
+    $upload_dir = str_replace(basename((string) $attachment['file']), '', $attachment['file']);
     if (! empty($attachment['metadata'])) {
       $attachment['metadata'] = @unserialize($attachment['metadata']);
       if (! empty($attachment['metadata']['sizes']) && is_array($attachment['metadata']['sizes'])) {
         foreach ($attachment['metadata']['sizes'] as $size) {
           if (empty($size['file'])) continue;
+
           $attachment['sizes'][] = $upload_dir . $size['file'];
         }
       }
     }
+
     unset($attachment['metadata']);
     return $attachment;
   }
 
-  function uploads_dir()
+  public function uploads_dir()
   {
     if (defined('UPLOADBLOGSDIR')) {
       $upload_dir = trailingslashit(ABSPATH) . UPLOADBLOGSDIR;
@@ -145,10 +154,14 @@ class WPSDB_Media_Files extends WPSDB_Base
       $upload_dir = wp_upload_dir();
       $upload_dir = $upload_dir['basedir'];
     }
+
     return trailingslashit($upload_dir);
   }
 
-  function get_local_media()
+  /**
+   * @return mixed[]
+   */
+  public function get_local_media(): array
   {
     $upload_dir = untrailingslashit($this->uploads_dir());
     if (! file_exists($upload_dir)) return [];
@@ -164,26 +177,23 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $local_media;
   }
 
-  function ajax_migrate_media()
+  public function ajax_migrate_media()
   {
     $this->check_ajax_referer('migrate-media');
     $this->set_time_limit();
 
     if ($_POST['intent'] == 'pull') {
-      $result = $this->process_pull_request();
-      return $result;
+      return $this->process_pull_request();
     }
-
-    $result = $this->process_push_request();
-    return $result;
+    return $this->process_push_request();
   }
 
-  function process_pull_request()
+  public function process_pull_request()
   {
     $files_to_download = $_POST['file_chunk'];
     $remote_uploads_url = trailingslashit($_POST['remote_uploads_url']);
-    $parsed = parse_url($_POST['url']);
-    if (! empty($parsed['user'])) {
+    $parsed = parse_url((string) $_POST['url']);
+    if (isset($parsed['user']) && ($parsed['user'] !== '' && $parsed['user'] !== '0')) {
       $credentials = sprintf('%s:%s@', $parsed['user'], $parsed['pass']);
       $remote_uploads_url = str_replace('://', '://' . $credentials, $remote_uploads_url);
     }
@@ -200,8 +210,8 @@ class WPSDB_Media_Files extends WPSDB_Base
         continue;
       }
 
-      $date = str_replace(basename($file_to_download), '', $file_to_download);
-      $new_path = $upload_dir . $date . basename($file_to_download);
+      $date = str_replace(basename((string) $file_to_download), '', $file_to_download);
+      $new_path = $upload_dir . $date . basename((string) $file_to_download);
 
       $move_result = @rename($temp_file_path, $new_path);
 
@@ -222,22 +232,20 @@ class WPSDB_Media_Files extends WPSDB_Base
       }
     }
 
-    if (! empty($errors)) {
+    if ($errors !== []) {
       $return = [
         'wpsdb_error'  => 1,
         'body'      => implode('<br />', $errors) . '<br />'
       ];
-      $result = $this->end_ajax(json_encode($return));
-      return $result;
+      return $this->end_ajax(json_encode($return));
     }
 
     // not required, just here because we have to return something otherwise the AJAX fails
     $return['success'] = 1;
-    $result = $this->end_ajax(json_encode($return));
-    return $result;
+    return $this->end_ajax(json_encode($return));
   }
 
-  function process_push_request()
+  public function process_push_request()
   {
     $files_to_migrate = $_POST['file_chunk'];
 
@@ -261,22 +269,19 @@ class WPSDB_Media_Files extends WPSDB_Base
     $ajax_url = trailingslashit($_POST['url']) . 'wp-admin/admin-ajax.php';
     $response = $this->remote_post($ajax_url, '', __FUNCTION__, $args);
     $response = $this->verify_remote_post_response($response);
-
-    $result = $this->end_ajax(json_encode($response));
-    return $result;
+    return $this->end_ajax(json_encode($response));
   }
 
-  function respond_to_push_request()
+  public function respond_to_push_request()
   {
     $filtered_post = $this->filter_post_elements($_POST, ['action', 'files']);
-    $filtered_post['files'] = stripslashes($filtered_post['files']);
+    $filtered_post['files'] = stripslashes((string) $filtered_post['files']);
     if (! $this->verify_signature($filtered_post, $this->settings['key'])) {
       $return = [
         'wpsdb_error'   => 1,
         'body'      => $this->invalid_content_verification_error . ' (#101mf)',
       ];
-      $result = $this->end_ajax(serialize($return));
-      return $result;
+      return $this->end_ajax(serialize($return));
     }
 
     if (! isset($_FILES['media'])) {
@@ -284,8 +289,7 @@ class WPSDB_Media_Files extends WPSDB_Base
         'wpsdb_error'   => 1,
         'body'      => __('$_FILES is empty, the upload appears to have failed', 'wp-sync-db-media-files') . ' (#106mf)',
       ];
-      $result = $this->end_ajax(serialize($return));
-      return $result;
+      return $this->end_ajax(serialize($return));
     }
 
     $upload_dir = $this->uploads_dir();
@@ -307,21 +311,22 @@ class WPSDB_Media_Files extends WPSDB_Base
       if (false === @move_uploaded_file($file['tmp_name'], $destination)) {
         $errors[] = __(sprintf('A problem occurred when attempting to move the temp file "%1$s" to "%2$s"', $file['tmp_name'], $destination), 'wp-sync-db-media-files') . ' (#107mf)';
       }
+
       ++$i;
     }
 
     $return = ['success' => 1];
-    if (! empty($errors)) {
+    if ($errors !== []) {
       $return = [
         'wpsdb_error'   => 1,
         'body'      => implode('<br />', $errors) . '<br />'
       ];
     }
-    $result = $this->end_ajax(serialize($return));
-    return $result;
+
+    return $this->end_ajax(serialize($return));
   }
 
-  function ajax_determine_media_to_migrate()
+  public function ajax_determine_media_to_migrate()
   {
     $this->check_ajax_referer('determine-media-to-migrate');
     $this->set_time_limit();
@@ -367,22 +372,19 @@ class WPSDB_Media_Files extends WPSDB_Base
         // the response is ignored here (for now) as this is not a critical task
       }
     }
-
-    $result = $this->end_ajax(json_encode($return));
-    return $result;
+    return $this->end_ajax(json_encode($return));
   }
 
-  function respond_to_remove_local_attachments()
+  public function respond_to_remove_local_attachments()
   {
     $filtered_post = $this->filter_post_elements($_POST, ['action', 'remote_attachments']);
-    $filtered_post['remote_attachments'] = stripslashes($filtered_post['remote_attachments']);
+    $filtered_post['remote_attachments'] = stripslashes((string) $filtered_post['remote_attachments']);
     if (! $this->verify_signature($filtered_post, $this->settings['key'])) {
       $return = [
         'wpsdb_error'   => 1,
         'body'      => $this->invalid_content_verification_error . ' (#109mf)',
       ];
-      $result = $this->end_ajax(serialize($return));
-      return $result;
+      return $this->end_ajax(serialize($return));
     }
 
     $remote_attachments = @unserialize($filtered_post['remote_attachments']);
@@ -391,8 +393,7 @@ class WPSDB_Media_Files extends WPSDB_Base
         'wpsdb_error'   => 1,
         'body'      => __('Error attempting to unserialize the remote attachment data', 'wp-sync-db-media-files') . ' (#110mf)',
       ];
-      $result = $this->end_ajax(serialize($return));
-      return $result;
+      return $this->end_ajax(serialize($return));
     }
 
     $this->remove_local_attachments($remote_attachments);
@@ -400,11 +401,10 @@ class WPSDB_Media_Files extends WPSDB_Base
     $return = [
       'success'   => 1,
     ];
-    $result = serialize(json_encode($return));
-    return $result;
+    return serialize(json_encode($return));
   }
 
-  function remove_local_attachments($remote_attachments)
+  public function remove_local_attachments($remote_attachments): void
   {
     $flat_remote_attachments = array_flip($this->get_flat_attachments($remote_attachments));
     $local_media = $this->get_local_media();
@@ -412,44 +412,49 @@ class WPSDB_Media_Files extends WPSDB_Base
     $temp_local_media = array_keys($local_media);
     $allowed_mime_types = array_flip(get_allowed_mime_types());
     $upload_dir = $this->uploads_dir();
-    foreach ($temp_local_media as $local_media_file) {
+    foreach ($temp_local_media as $temp_local_medium) {
       // don't remove folders
-      if (false === is_file($upload_dir . $local_media_file)) continue;
-      $filetype = wp_check_filetype($local_media_file);
+      if (false === is_file($upload_dir . $temp_local_medium)) continue;
+
+      $filetype = wp_check_filetype($temp_local_medium);
       // don't remove files that we shouldn't remove, e.g. .php, .sql, etc
       if (false === isset($allowed_mime_types[$filetype['type']])) continue;
-      // don't remove files that exist on the remote site
-      if (true === isset($flat_remote_attachments[$local_media_file])) continue;
 
-      @unlink($upload_dir . $local_media_file);
+      // don't remove files that exist on the remote site
+      if (true === isset($flat_remote_attachments[$temp_local_medium])) continue;
+
+      @unlink($upload_dir . $temp_local_medium);
     }
   }
 
-  function media_diff($site_a_attachments, $site_b_attachments, $site_a_media, $site_b_media)
+  public function media_diff(array $site_a_attachments, $site_b_attachments, array $site_a_media, $site_b_media): void
   {
-    foreach ($site_b_attachments as $attachment) {
-      $local_attachment_key = $this->multidimensional_search(['file' => $attachment['file']], $site_a_attachments);
+    foreach ($site_b_attachments as $site_b_attachment) {
+      $local_attachment_key = $this->multidimensional_search(['file' => $site_b_attachment['file']], $site_a_attachments);
       if (false === $local_attachment_key) continue;
-      $remote_timestamp = strtotime($attachment['date']);
-      $local_timestamp = strtotime($site_a_attachments[$local_attachment_key]['date']);
+
+      $remote_timestamp = strtotime((string) $site_b_attachment['date']);
+      $local_timestamp = strtotime((string) $site_a_attachments[$local_attachment_key]['date']);
       if ($local_timestamp >= $remote_timestamp) {
-        if (! isset($site_a_media[$attachment['file']])) {
-          $this->add_files_to_migrate($attachment, $site_b_media);
+        if (! isset($site_a_media[$site_b_attachment['file']])) {
+          $this->add_files_to_migrate($site_b_attachment, $site_b_media);
         } else {
-          $this->maybe_add_resized_images($attachment, $site_b_media, $site_a_media);
+          $this->maybe_add_resized_images($site_b_attachment, $site_b_media, $site_a_media);
         }
       } else {
-        $this->add_files_to_migrate($attachment, $site_b_media);
+        $this->add_files_to_migrate($site_b_attachment, $site_b_media);
       }
     }
   }
 
-  function add_files_to_migrate($attachment, $remote_media)
+  public function add_files_to_migrate(array $attachment, array $remote_media): void
   {
     if (isset($remote_media[$attachment['file']])) {
       $this->files_to_migrate[$attachment['file']] = $remote_media[$attachment['file']];
     }
+
     if (empty($attachment['sizes']) || apply_filters('wpsdb_exclude_resized_media', false)) return;
+
     foreach ($attachment['sizes'] as $size) {
       if (isset($remote_media[$size])) {
         $this->files_to_migrate[$size] = $remote_media[$size];
@@ -457,9 +462,10 @@ class WPSDB_Media_Files extends WPSDB_Base
     }
   }
 
-  function maybe_add_resized_images($attachment, $site_b_media, $site_a_media)
+  public function maybe_add_resized_images(array $attachment, array $site_b_media, array $site_a_media): void
   {
     if (empty($attachment['sizes']) || apply_filters('wpsdb_exclude_resized_media', false)) return;
+
     foreach ($attachment['sizes'] as $size) {
       if (isset($site_b_media[$size]) && ! isset($site_a_media[$size])) {
         $this->files_to_migrate[$size] = $site_b_media[$size];
@@ -467,7 +473,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     }
   }
 
-  function respond_to_get_remote_media_listing()
+  public function respond_to_get_remote_media_listing()
   {
     $filtered_post = $this->filter_post_elements($_POST, ['action', 'temp_prefix', 'intent']);
     if (! $this->verify_signature($filtered_post, $this->settings['key'])) {
@@ -475,8 +481,7 @@ class WPSDB_Media_Files extends WPSDB_Base
         'wpsdb_error'   => 1,
         'body'      => $this->invalid_content_verification_error . ' (#100mf)',
       ];
-      $result = $this->end_ajax(serialize($return));
-      return $result;
+      return $this->end_ajax(serialize($return));
     }
 
     if (defined('UPLOADBLOGSDIR')) {
@@ -491,24 +496,22 @@ class WPSDB_Media_Files extends WPSDB_Base
     $return['remote_attachments'] = $this->get_local_attachments();
     $return['remote_media'] = $this->get_local_media();
     $return['remote_uploads_url'] = $upload_url;
-
-    $result = $this->end_ajax(serialize($return));
-    return $result;
+    return $this->end_ajax(serialize($return));
   }
 
-  function migration_form_controls()
+  public function migration_form_controls(): void
   {
     $this->template('migrate');
   }
 
-  function accepted_profile_fields($profile_fields)
+  public function accepted_profile_fields($profile_fields)
   {
     $profile_fields[] = 'media_files';
     $profile_fields[] = 'remove_local_media';
     return $profile_fields;
   }
 
-  function load_assets()
+  public function load_assets(): void
   {
     $src = WPSDB_ROOT . 'asset/js/media-files.js';
     $version = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? time() : $this->plugin_version;
@@ -524,19 +527,20 @@ class WPSDB_Media_Files extends WPSDB_Base
     ]);
   }
 
-  function establish_remote_connection_data($data)
+  public function establish_remote_connection_data(array $data): array
   {
     $data['media_files_available'] = '1';
     $data['media_files_version'] = $this->plugin_version;
     if (function_exists('ini_get')) {
       $max_file_uploads = ini_get('max_file_uploads');
     }
-    $max_file_uploads = (empty($max_file_uploads)) ? 20 : $max_file_uploads;
+
+    $max_file_uploads = ($max_file_uploads === '' || $max_file_uploads === '0' || $max_file_uploads === false) ? 20 : $max_file_uploads;
     $data['media_files_max_file_uploads'] = apply_filters('wpsdbmf_max_file_uploads', $max_file_uploads);
     return $data;
   }
 
-  function multidimensional_search($needle, $haystack)
+  public function multidimensional_search($needle, $haystack)
   {
     if (empty($needle) || empty($haystack)) return false;
 
@@ -544,13 +548,17 @@ class WPSDB_Media_Files extends WPSDB_Base
       foreach ($needle as $skey => $svalue) {
         $exists = (isset($haystack[$key][$skey]) && $haystack[$key][$skey] === $svalue);
       }
+
       if ($exists) return $key;
     }
 
     return false;
   }
 
-  function get_blogs()
+  /**
+   * @return mixed[]
+   */
+  public function get_blogs(): array
   {
     global $wpdb;
 
@@ -572,7 +580,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $clean_blogs;
   }
 
-  function download_url($url, $timeout = 300)
+  public function download_url($url, $timeout = 300)
   {
     //WARNING: The file is not automatically deleted, The script must unlink() the file.
     if (! $url)
@@ -597,40 +605,39 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $tmpfname;
   }
 
-  function verify_remote_post_response($response)
+  public function verify_remote_post_response(array $response)
   {
     if (false === $response) {
       $return = ['wpsdb_error' => 1, 'body' => $this->error];
-      $result = $this->end_ajax(json_encode($return));
-      return $result;
+      return $this->end_ajax(json_encode($return));
     }
 
     if (! is_serialized(trim($response))) {
       $return = ['wpsdb_error'  => 1, 'body' => $response];
-      $result = $this->end_ajax(json_encode($return));
-      return $result;
+      return $this->end_ajax(json_encode($return));
     }
 
     $response = unserialize(trim($response));
 
     if (isset($response['wpsdb_error'])) {
-      $result = $this->end_ajax(json_encode($response));
-      return $result;
+      return $this->end_ajax(json_encode($response));
     }
+
     return $response;
   }
 
-  function add_nonces($nonces)
+  public function add_nonces(array $nonces): array
   {
     $nonces['migrate_media'] = wp_create_nonce('migrate-media');
     $nonces['determine_media_to_migrate'] = wp_create_nonce('determine-media-to-migrate');
     return $nonces;
   }
 
-  function cli_migration($outcome, $profile, $verify_connection_response, $initiate_migration_response)
+  public function cli_migration($outcome, array $profile, array $verify_connection_response, $initiate_migration_response)
   {
     global $wpsdb, $wpsdb_cli;
     if (true !== $outcome) return $outcome;
+
     if (!isset($profile['media_files']) || '1' !== $profile['media_files']) return $outcome;
 
     if (!isset($verify_connection_response['media_files_max_file_uploads'])) {
@@ -641,7 +648,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     $wpsdb->set_cli_migration();
     $this->set_cli_migration();
 
-    $connection_info = explode("\n", $profile['connection_info']);
+    $connection_info = explode("\n", (string) $profile['connection_info']);
 
     $_POST['intent'] = $profile['action'];
     $_POST['url'] = trim($connection_info[0]);
@@ -664,7 +671,7 @@ class WPSDB_Media_Files extends WPSDB_Base
       $file_chunk_size = 0;
       $number_of_files_to_migrate = 0;
       foreach ($files_to_migrate as $file_to_migrate => $file_size) {
-        if (empty($file_chunk_to_migrate)) {
+        if ($file_chunk_to_migrate === []) {
           $file_chunk_to_migrate[] = $file_to_migrate;
           $file_chunk_size += $file_size;
           unset($files_to_migrate[$file_to_migrate]);
@@ -687,6 +694,7 @@ class WPSDB_Media_Files extends WPSDB_Base
         if (is_wp_error($migrate_media_response = $wpsdb_cli->verify_cli_response($response, 'ajax_migrate_media()'))) return $migrate_media_response;
       }
     }
+
     return true;
   }
 }

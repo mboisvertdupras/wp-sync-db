@@ -1,30 +1,8 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Plugin Name: WP Sync DB
- * Description: Export, push, and pull to migrate your WordPress databases.
- * Author: Jason Gerber
- * Version: 2.0.5
- * Author URI: https://jasongerber.ch
- * GitHub Plugin URI: jsongerber/wp-sync-db
- * Release Asset: true
- * Network: True
- */
-
-// PHP version check - must run before autoload.php which may contain PHP 8.3 syntax
-if (PHP_VERSION_ID < 80300) {
-    add_action('admin_notices', function () {
-        echo '<div class="notice notice-error is-dismissible"><p>' . sprintf(
-            __('<strong>WP Sync DB Error:</strong> This plugin requires PHP 8.3 or higher. You are running PHP %s. Please upgrade your PHP version.', 'wp-sync-db'),
-            PHP_VERSION
-        ) . '</p></div>';
-    });
-    return;
-}
-
-if (!file_exists(dirname(__FILE__) . '/lib/autoload.php')) {
-  add_action('admin_notices', function () {
+if (!file_exists(__DIR__ . '/lib/autoload.php')) {
+  add_action('admin_notices', function (): void {
     echo '<div class="notice notice-error is-dismissible"><p>' . sprintf(
       __('<strong>WB Sync DB Error:</strong> Some files seem to be missing from the installation, if you have manually installed the plugin, please reinstall using the zip in the <a href="%s" target="_blank">latest release</a> or follow the instruction in the <a href="%s" target="_blank">readme</a>', 'wp-sync-db'),
       'https://github.com/jsongerber/wp-sync-db/releases/latest',
@@ -39,13 +17,13 @@ if (!file_exists(dirname(__FILE__) . '/lib/autoload.php')) {
   return;
 }
 
-require_once dirname(__FILE__) . '/lib/autoload.php';
+require_once __DIR__ . '/lib/autoload.php';
 
 use WPSDB\WPSDB;
 
 define('WPSDB_ROOT', plugin_dir_url(__FILE__));
 
-function wp_sync_db_loaded()
+function wp_sync_db_loaded(): void
 {
   // if neither WordPress admin nor running from wp-cli, exit quickly to prevent performance impact
   if (!is_admin() && ! (class_exists('WP_CLI') && WP_CLI)) return;
@@ -56,7 +34,7 @@ function wp_sync_db_loaded()
 
 add_action('plugins_loaded', 'wp_sync_db_loaded');
 
-function wp_sync_db_init()
+function wp_sync_db_init(): void
 {
   // if neither WordPress admin nor running from wp-cli, exit quickly to prevent performance impact
   if (!is_admin() && ! (defined('WP_CLI') && WP_CLI)) return;

@@ -27,7 +27,7 @@ class WPSDBCLI
    *
    * @since 1.0
    */
-  public function migrate($args, $assoc_args)
+  public function migrate($args, $assoc_args): void
   {
     $profile = $args[0];
 
@@ -39,10 +39,9 @@ class WPSDBCLI
     }
 
     WP_CLI::warning($result->get_error_message());
-    return;
   }
 
-  public function profiles()
+  public function profiles(): void
   {
     $wpsdb_settings = get_option('wpsdb_settings');
 

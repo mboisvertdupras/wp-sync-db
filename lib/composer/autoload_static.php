@@ -6,15 +6,20 @@ namespace Composer\Autoload;
 
 class ComposerStaticInit8ce2da58fd2a5de764f46c4ade6ae4c5
 {
+    public static $files = array (
+        '9b38cf48e83f5d8f60375221cd213eee' => __DIR__ . '/..' . '/phpstan/phpstan/bootstrap.php',
+        '38143a9afc50997d55e4815db8489d1c' => __DIR__ . '/..' . '/rector/rector/bootstrap.php',
+    );
+
     public static $prefixLengthsPsr4 = array (
-        'W' => 
+        'W' =>
         array (
             'WPSDB\\' => 6,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'WPSDB\\' => 
+        'WPSDB\\' =>
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),

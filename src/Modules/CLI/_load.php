@@ -17,7 +17,7 @@ use WPSDB\Modules\CLI\WPSDBCLI;
 
 if (function_exists('wp_sync_db_cli_loaded')) {
   // If the deprecated plugin wp-sync-db-media-files is installed
-  add_action('admin_notices', function () {
+  add_action('admin_notices', function (): void {
     echo '<div class="notice notice-warning is-dismissible"><p>' . __('The new version of <code>WP Sync DB</code> now includes the cli module, we have automatically disabled the now deprecated <code>WP Sync DB CLI</code> plugin, you can delete it.', 'wp-sync-db-media-files') . '</p></div>';
   });
 
@@ -27,9 +27,9 @@ if (function_exists('wp_sync_db_cli_loaded')) {
   deactivate_plugins('wp-sync-db-cli/wp-sync-db-cli.php');
 }
 
-function wp_sync_db_module_cli_loaded()
+function wp_sync_db_module_cli_loaded(): void
 {
-  if (! class_exists('WPSDB\WPSDB_Base')) return;
+  if (! class_exists(\WPSDB\WPSDB_Base::class)) return;
 
   // register with wp-cli if it's running, and command hasn't already been defined elsewhere
   if (defined('WP_CLI') && WP_CLI && ! class_exists('WPSDBCLI')) {
@@ -39,6 +39,7 @@ function wp_sync_db_module_cli_loaded()
   global $wpsdb_cli;
   $wpsdb_cli = new WPSDB_CLI(__FILE__);
 }
+
 add_action('plugins_loaded', 'wp_sync_db_module_cli_loaded', 20);
 
 function wpsdb_migrate($profile)
@@ -47,5 +48,6 @@ function wpsdb_migrate($profile)
   if (empty($wpsdb_cli)) {
     return new WP_Error('wpsdb_cli_error', __('WP Sync DB CLI class not available', 'wp-sync-db-cli'));
   }
+
   return $wpsdb_cli->cli_migration($profile);
 }
