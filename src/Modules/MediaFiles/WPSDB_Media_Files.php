@@ -19,22 +19,99 @@ class WPSDB_Media_Files extends WPSDB_Base
   {
     parent::__construct($plugin_file_path);
 
+    /**
+     * Fires after the advanced options section in the migration form.
+     *
+     * @since 1.0
+     * @param WPSDB_Media_Files $this The WPSDB_Media_Files instance.
+     */
     add_action('wpsdb_after_advanced_options', $this->migration_form_controls(...));
+
+    /**
+     * Fires when loading plugin assets.
+     *
+     * @since 1.0
+     * @param WPSDB_Media_Files $this The WPSDB_Media_Files instance.
+     */
     add_action('wpsdb_load_assets', $this->load_assets(...));
+
+    /**
+     * Filters the accepted profile fields.
+     *
+     * @since 1.0
+     * @param string[] $profile_fields Array of accepted profile field names.
+     * @return string[] Modified array of profile fields.
+     */
     add_filter('wpsdb_accepted_profile_fields', $this->accepted_profile_fields(...));
+
+    /**
+     * Filters the data used to establish a remote connection.
+     *
+     * @since 1.0
+     * @param array<string, mixed> $data Array of connection data.
+     * @return array<string, mixed> Modified array of connection data.
+     */
     add_filter('wpsdb_establish_remote_connection_data', $this->establish_remote_connection_data(...));
+
+    /**
+     * Filters the nonces used for AJAX requests.
+     *
+     * @since 1.0
+     * @param array<string, string> $nonces Array of nonce names and values.
+     * @return array<string, string> Modified array of nonces.
+     */
     add_filter('wpsdb_nonces', $this->add_nonces(...));
 
-    // compatibility with CLI migraitons
+    /**
+     * Filters the CLI migration finalization outcome.
+     *
+     * @since 1.0
+     * @param bool|WP_Error $outcome The migration outcome.
+     * @param array<string, mixed> $profile The migration profile.
+     * @param array<string, mixed> $verify_connection_response Connection verification response.
+     * @param array<int, array<string, mixed>> $initiate_migration_response Migration initiation response.
+     * @return bool|WP_Error The filtered migration outcome.
+     */
     add_filter('wpsdb_cli_finalize_migration', $this->cli_migration(...), 10, 4);
 
-    // internal AJAX handlers
+    /**
+     * Fires when handling AJAX request to determine media to migrate.
+     *
+     * @since 1.0
+     * @param WPSDB_Media_Files $this The WPSDB_Media_Files instance.
+     */
     add_action('wp_ajax_wpsdbmf_determine_media_to_migrate', $this->ajax_determine_media_to_migrate(...));
+
+    /**
+     * Fires when handling AJAX request to migrate media files.
+     *
+     * @since 1.0
+     * @param WPSDB_Media_Files $this The WPSDB_Media_Files instance.
+     */
     add_action('wp_ajax_wpsdbmf_migrate_media', $this->ajax_migrate_media(...));
 
-    // external AJAX handlers
+    /**
+     * Fires when handling unauthenticated AJAX request to get remote media listing.
+     *
+     * @since 1.0
+     * @param WPSDB_Media_Files $this The WPSDB_Media_Files instance.
+     */
     add_action('wp_ajax_nopriv_wpsdbmf_get_remote_media_listing', $this->respond_to_get_remote_media_listing(...));
+
+    /**
+     * Fires when handling unauthenticated AJAX request for push operations.
+     *
+     * @since 1.0
+     * @param WPSDB_Media_Files $this The WPSDB_Media_Files instance.
+     */
     add_action('wp_ajax_nopriv_wpsdbmf_push_request', $this->respond_to_push_request(...));
+
+    /**
+     * Fires when handling unauthenticated AJAX request to remove local attachments.
+     *
+     * @since 1.0
+     * @param WPSDB_Media_Files $this The WPSDB_Media_Files instance.
+     */
     add_action('wp_ajax_nopriv_wpsdbmf_remove_local_attachments', $this->respond_to_remove_local_attachments(...));
   }
 
