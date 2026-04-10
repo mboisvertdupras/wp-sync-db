@@ -10,11 +10,12 @@ use WPSDB\WPSDB_Base;
 
 class WPSDB_Media_Files extends WPSDB_Base
 {
-  protected $files_to_migrate;
+  /** @var array<string, int> */
+  protected array $files_to_migrate = [];
 
-  protected $responding_to_get_remote_media_listing = false;
+  protected bool $responding_to_get_remote_media_listing = false;
 
-  public function __construct($plugin_file_path)
+  public function __construct(string $plugin_file_path)
   {
     parent::__construct($plugin_file_path);
 
@@ -105,7 +106,11 @@ class WPSDB_Media_Files extends WPSDB_Base
   /**
    * @return mixed[]
    */
-  public function get_flat_attachments($attachments): array
+  /**
+   * @param array<int, array<string, mixed>> $attachments
+   * @return string[]
+   */
+  public function get_flat_attachments(array $attachments): array
   {
     $flat_attachments = [];
     foreach ($attachments as $attachment) {
@@ -146,7 +151,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $attachment;
   }
 
-  public function uploads_dir()
+  public function uploads_dir(): string
   {
     if (defined('UPLOADBLOGSDIR')) {
       $upload_dir = trailingslashit(ABSPATH) . UPLOADBLOGSDIR;
@@ -177,7 +182,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $local_media;
   }
 
-  public function ajax_migrate_media()
+  public function ajax_migrate_media(): mixed
   {
     $this->check_ajax_referer('migrate-media');
     $this->set_time_limit();
@@ -188,7 +193,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $this->process_push_request();
   }
 
-  public function process_pull_request()
+  public function process_pull_request(): mixed
   {
     $files_to_download = $_POST['file_chunk'];
     $remote_uploads_url = trailingslashit($_POST['remote_uploads_url']);
@@ -245,7 +250,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $this->end_ajax(json_encode($return));
   }
 
-  public function process_push_request()
+  public function process_push_request(): mixed
   {
     $files_to_migrate = $_POST['file_chunk'];
 
@@ -272,7 +277,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $this->end_ajax(json_encode($response));
   }
 
-  public function respond_to_push_request()
+  public function respond_to_push_request(): mixed
   {
     $filtered_post = $this->filter_post_elements($_POST, ['action', 'files']);
     $filtered_post['files'] = stripslashes((string) $filtered_post['files']);
@@ -326,7 +331,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $this->end_ajax(serialize($return));
   }
 
-  public function ajax_determine_media_to_migrate()
+  public function ajax_determine_media_to_migrate(): mixed
   {
     $this->check_ajax_referer('determine-media-to-migrate');
     $this->set_time_limit();
@@ -375,7 +380,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $this->end_ajax(json_encode($return));
   }
 
-  public function respond_to_remove_local_attachments()
+  public function respond_to_remove_local_attachments(): string
   {
     $filtered_post = $this->filter_post_elements($_POST, ['action', 'remote_attachments']);
     $filtered_post['remote_attachments'] = stripslashes((string) $filtered_post['remote_attachments']);
@@ -404,7 +409,10 @@ class WPSDB_Media_Files extends WPSDB_Base
     return serialize(json_encode($return));
   }
 
-  public function remove_local_attachments($remote_attachments): void
+  /**
+   * @param array<int, array<string, mixed>> $remote_attachments
+   */
+  public function remove_local_attachments(array $remote_attachments): void
   {
     $flat_remote_attachments = array_flip($this->get_flat_attachments($remote_attachments));
     $local_media = $this->get_local_media();
@@ -427,7 +435,13 @@ class WPSDB_Media_Files extends WPSDB_Base
     }
   }
 
-  public function media_diff(array $site_a_attachments, $site_b_attachments, array $site_a_media, $site_b_media): void
+  /**
+   * @param array<int, array<string, mixed>> $site_a_attachments
+   * @param array<int, array<string, mixed>> $site_b_attachments
+   * @param array<string, int> $site_a_media
+   * @param array<string, int> $site_b_media
+   */
+  public function media_diff(array $site_a_attachments, array $site_b_attachments, array $site_a_media, array $site_b_media): void
   {
     foreach ($site_b_attachments as $site_b_attachment) {
       $local_attachment_key = $this->multidimensional_search(['file' => $site_b_attachment['file']], $site_a_attachments);
@@ -473,7 +487,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     }
   }
 
-  public function respond_to_get_remote_media_listing()
+  public function respond_to_get_remote_media_listing(): mixed
   {
     $filtered_post = $this->filter_post_elements($_POST, ['action', 'temp_prefix', 'intent']);
     if (! $this->verify_signature($filtered_post, $this->settings['key'])) {
@@ -504,7 +518,11 @@ class WPSDB_Media_Files extends WPSDB_Base
     $this->template('migrate');
   }
 
-  public function accepted_profile_fields($profile_fields)
+  /**
+   * @param string[] $profile_fields
+   * @return string[]
+   */
+  public function accepted_profile_fields(array $profile_fields): array
   {
     $profile_fields[] = 'media_files';
     $profile_fields[] = 'remove_local_media';
@@ -540,7 +558,12 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $data;
   }
 
-  public function multidimensional_search($needle, $haystack)
+  /**
+   * @param array<string, mixed> $needle
+   * @param array<int, array<string, mixed>> $haystack
+   * @return int|false
+   */
+  public function multidimensional_search(array $needle, array $haystack): int|false
   {
     if (empty($needle) || empty($haystack)) return false;
 
@@ -580,7 +603,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $clean_blogs;
   }
 
-  public function download_url($url, $timeout = 300)
+  public function download_url(string $url, int $timeout = 300): string|WP_Error
   {
     //WARNING: The file is not automatically deleted, The script must unlink() the file.
     if (! $url)
@@ -605,7 +628,7 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $tmpfname;
   }
 
-  public function verify_remote_post_response(array $response)
+  public function verify_remote_post_response(array $response): mixed
   {
     if (false === $response) {
       $return = ['wpsdb_error' => 1, 'body' => $this->error];
@@ -633,7 +656,12 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $nonces;
   }
 
-  public function cli_migration($outcome, array $profile, array $verify_connection_response, $initiate_migration_response)
+  /**
+   * @param bool|WP_Error $outcome
+   * @param array<int, array<string, mixed>> $initiate_migration_response
+   * @return bool|WP_Error
+   */
+  public function cli_migration(bool|WP_Error $outcome, array $profile, array $verify_connection_response, array $initiate_migration_response): bool|WP_Error
   {
     global $wpsdb, $wpsdb_cli;
     if (true !== $outcome) return $outcome;

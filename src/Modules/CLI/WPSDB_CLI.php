@@ -150,7 +150,10 @@ class WPSDB_CLI extends WPSDB_Base
     return true;
   }
 
-  public function verify_cli_response($response, $function_name)
+  /**
+   * @return array<string, mixed>|WP_Error
+   */
+  public function verify_cli_response(string $response, string $function_name): array|WP_Error
   {
     global $wpsdb;
     $response = trim((string) $response);

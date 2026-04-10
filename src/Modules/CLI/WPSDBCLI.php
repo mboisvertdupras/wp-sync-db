@@ -27,7 +27,11 @@ class WPSDBCLI
    *
    * @since 1.0
    */
-  public function migrate($args, $assoc_args): void
+  /**
+   * @param string[] $args
+   * @param array<string, mixed> $assoc_args
+   */
+  public function migrate(array $args, array $assoc_args): void
   {
     $profile = $args[0];
 
@@ -43,6 +47,8 @@ class WPSDBCLI
 
   public function profiles(): void
   {
+    /** @var array<string, mixed> $wpsdb_settings */
+    $wpsdb_settings = get_option('wpsdb_settings');
     $wpsdb_settings = get_option('wpsdb_settings');
 
     if (!isset($wpsdb_settings['profiles']) || empty($wpsdb_settings['profiles'])) {

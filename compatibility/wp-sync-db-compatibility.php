@@ -43,12 +43,14 @@ add_filter( 'option_active_plugins', 'wpsdbc_exclude_plugins' );
 
 /**
 * remove network-active plugins
-* @param array $plugins array of plugins keyed by name (name=>timestamp pairs)
+* @param array<string, int> $plugins array of plugins keyed by name (name=>timestamp pairs)
+* @return array<string, int>
 */
 function wpsdbc_exclude_site_plugins( array $plugins ): array {
 	if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX || !isset( $_POST['action'] ) || !str_contains( (string) $_POST['action'], 'wpsdb' ) ) return $plugins;
 
 	$wpsdb_settings = get_option( 'wpsdb_settings' );
+	$blacklist_plugins = [];
 	if ( !empty( $wpsdb_settings['blacklist_plugins'] ) ) {
 		$blacklist_plugins = array_flip( $wpsdb_settings['blacklist_plugins'] );
 	}
