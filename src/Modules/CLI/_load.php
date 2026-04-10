@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /*
 Plugin Name: WP Sync DB CLI
 GitHub Plugin URI: hrsetyono/wp-sync-db-cli

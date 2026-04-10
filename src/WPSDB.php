@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace WPSDB;
 
@@ -41,14 +42,14 @@ class WPSDB extends WPSDB_Base
 
     $this->max_insert_string_len = 50000; // 50000 is the default as defined by phphmyadmin
 
-    $default_settings = array(
+    $default_settings = [
       'key'  => $this->generate_key(),
       'allow_pull' => false,
       'allow_push' => false,
-      'profiles'  => array(),
+      'profiles'  => [],
       'verify_ssl'  => false,
-      'blacklist_plugins' => array(),
-    );
+      'blacklist_plugins' => [],
+    ];
 
     if (empty($this->settings['max_request'])) {
       $this->settings['max_request'] = min(1024 * 1024, $this->get_bottleneck('max'));
@@ -78,38 +79,38 @@ class WPSDB extends WPSDB_Base
       }
     }
 
-    add_filter('plugin_action_links_' . $this->plugin_basename, array($this, 'plugin_action_links'));
-    add_filter('network_admin_plugin_action_links_' . $this->plugin_basename, array($this, 'plugin_action_links'));
+    add_filter('plugin_action_links_' . $this->plugin_basename, [$this, 'plugin_action_links']);
+    add_filter('network_admin_plugin_action_links_' . $this->plugin_basename, [$this, 'plugin_action_links']);
 
     // internal AJAX handlers
-    add_action('wp_ajax_wpsdb_verify_connection_to_remote_site', array($this, 'ajax_verify_connection_to_remote_site'));
-    add_action('wp_ajax_wpsdb_reset_api_key', array($this, 'ajax_reset_api_key'));
-    add_action('wp_ajax_wpsdb_delete_migration_profile', array($this, 'ajax_delete_migration_profile'));
-    add_action('wp_ajax_wpsdb_save_setting', array($this, 'ajax_save_setting'));
-    add_action('wp_ajax_wpsdb_save_profile', array($this, 'ajax_save_profile'));
-    add_action('wp_ajax_wpsdb_initiate_migration', array($this, 'ajax_initiate_migration'));
-    add_action('wp_ajax_wpsdb_migrate_table', array($this, 'ajax_migrate_table'));
-    add_action('wp_ajax_wpsdb_finalize_migration', array($this, 'ajax_finalize_migration'));
-    add_action('wp_ajax_wpsdb_clear_log', array($this, 'ajax_clear_log'));
-    add_action('wp_ajax_wpsdb_get_log', array($this, 'ajax_get_log'));
-    add_action('wp_ajax_wpsdb_fire_migration_complete', array($this, 'fire_migration_complete'));
-    add_action('wp_ajax_wpsdb_update_max_request_size', array($this, 'ajax_update_max_request_size'));
-    add_action('wp_ajax_wpsdb_plugin_compatibility', array($this, 'ajax_plugin_compatibility'));
-    add_action('wp_ajax_wpsdb_blacklist_plugins', array($this, 'ajax_blacklist_plugins'));
-    add_action('wp_ajax_wpsdb_cancel_migration', array($this, 'ajax_cancel_migration'));
+    add_action('wp_ajax_wpsdb_verify_connection_to_remote_site', [$this, 'ajax_verify_connection_to_remote_site']);
+    add_action('wp_ajax_wpsdb_reset_api_key', [$this, 'ajax_reset_api_key']);
+    add_action('wp_ajax_wpsdb_delete_migration_profile', [$this, 'ajax_delete_migration_profile']);
+    add_action('wp_ajax_wpsdb_save_setting', [$this, 'ajax_save_setting']);
+    add_action('wp_ajax_wpsdb_save_profile', [$this, 'ajax_save_profile']);
+    add_action('wp_ajax_wpsdb_initiate_migration', [$this, 'ajax_initiate_migration']);
+    add_action('wp_ajax_wpsdb_migrate_table', [$this, 'ajax_migrate_table']);
+    add_action('wp_ajax_wpsdb_finalize_migration', [$this, 'ajax_finalize_migration']);
+    add_action('wp_ajax_wpsdb_clear_log', [$this, 'ajax_clear_log']);
+    add_action('wp_ajax_wpsdb_get_log', [$this, 'ajax_get_log']);
+    add_action('wp_ajax_wpsdb_fire_migration_complete', [$this, 'fire_migration_complete']);
+    add_action('wp_ajax_wpsdb_update_max_request_size', [$this, 'ajax_update_max_request_size']);
+    add_action('wp_ajax_wpsdb_plugin_compatibility', [$this, 'ajax_plugin_compatibility']);
+    add_action('wp_ajax_wpsdb_blacklist_plugins', [$this, 'ajax_blacklist_plugins']);
+    add_action('wp_ajax_wpsdb_cancel_migration', [$this, 'ajax_cancel_migration']);
 
     // external AJAX handlers
-    add_action('wp_ajax_nopriv_wpsdb_verify_connection_to_remote_site', array($this, 'respond_to_verify_connection_to_remote_site'));
-    add_action('wp_ajax_nopriv_wpsdb_remote_initiate_migration', array($this, 'respond_to_remote_initiate_migration'));
-    add_action('wp_ajax_nopriv_wpsdb_process_chunk', array($this, 'ajax_process_chunk'));
-    add_action('wp_ajax_nopriv_wpsdb_process_pull_request', array($this, 'respond_to_process_pull_request'));
-    add_action('wp_ajax_nopriv_wpsdb_fire_migration_complete', array($this, 'fire_migration_complete'));
-    add_action('wp_ajax_nopriv_wpsdb_backup_remote_table', array($this, 'respond_to_backup_remote_table'));
-    add_action('wp_ajax_nopriv_wpsdb_remote_finalize_migration', array($this, 'respond_to_remote_finalize_migration'));
-    add_action('wp_ajax_nopriv_wpsdb_process_push_migration_cancellation', array($this, 'respond_to_process_push_migration_cancellation'));
+    add_action('wp_ajax_nopriv_wpsdb_verify_connection_to_remote_site', [$this, 'respond_to_verify_connection_to_remote_site']);
+    add_action('wp_ajax_nopriv_wpsdb_remote_initiate_migration', [$this, 'respond_to_remote_initiate_migration']);
+    add_action('wp_ajax_nopriv_wpsdb_process_chunk', [$this, 'ajax_process_chunk']);
+    add_action('wp_ajax_nopriv_wpsdb_process_pull_request', [$this, 'respond_to_process_pull_request']);
+    add_action('wp_ajax_nopriv_wpsdb_fire_migration_complete', [$this, 'fire_migration_complete']);
+    add_action('wp_ajax_nopriv_wpsdb_backup_remote_table', [$this, 'respond_to_backup_remote_table']);
+    add_action('wp_ajax_nopriv_wpsdb_remote_finalize_migration', [$this, 'respond_to_remote_finalize_migration']);
+    add_action('wp_ajax_nopriv_wpsdb_process_push_migration_cancellation', [$this, 'respond_to_process_push_migration_cancellation']);
 
     // Clear update transients when the user clicks the "Check Again" button from the update screen
-    add_action('current_screen', array($this, 'check_again_clear_transients'));
+    add_action('current_screen', [$this, 'check_again_clear_transients']);
 
     $absolute_path = rtrim(ABSPATH, '\\/');
     $site_url = rtrim(site_url('', 'http'), '\\/');
@@ -122,7 +123,7 @@ class WPSDB extends WPSDB_Base
     }
     $this->absolute_root_file_path = $absolute_path;
 
-    $this->accepted_fields = array(
+    $this->accepted_fields = [
       'action',
       'save_computer',
       'gzip_file',
@@ -144,9 +145,9 @@ class WPSDB extends WPSDB_Base
       'select_backup',
       'exclude_transients',
       'exclude_post_types'
-    );
+    ];
 
-    $this->default_profile = array(
+    $this->default_profile = [
       'action' => 'savefile',
       'save_computer' => '1',
       'gzip_file' => '1',
@@ -154,13 +155,13 @@ class WPSDB extends WPSDB_Base
       'replace_guids' => '1',
       'default_profile' => true,
       'name' => '',
-      'select_tables' => array(),
-      'select_post_types' => array(),
+      'select_tables' => [],
+      'select_post_types' => [],
       'backup_option' => 'backup_only_with_prefix',
       'exclude_transients' => '1',
-    );
+    ];
 
-    $this->checkbox_options = array(
+    $this->checkbox_options = [
       'save_computer' => '0',
       'gzip_file' => '0',
       'replace_guids' => '0',
@@ -168,24 +169,24 @@ class WPSDB extends WPSDB_Base
       'keep_active_plugins' => '0',
       'create_backup' => '0',
       'exclude_post_types' => '0'
-    );
+    ];
 
     if (is_multisite()) {
-      add_action('network_admin_menu', array($this, 'network_admin_menu'));
+      add_action('network_admin_menu', [$this, 'network_admin_menu']);
     } else {
-      add_action('admin_menu', array($this, 'admin_menu'));
+      add_action('admin_menu', [$this, 'admin_menu']);
     }
 
-    add_filter('admin_body_class', array($this, 'admin_body_class'));
+    add_filter('admin_body_class', [$this, 'admin_body_class']);
 
     // this is how many DB rows are processed at a time, allow devs to change this value
     $this->rows_per_segment = apply_filters('wpsdb_rows_per_segment', $this->rows_per_segment);
 
     if (is_multisite()) {
-      add_action('network_admin_menu', array($this, 'network_admin_menu'));
+      add_action('network_admin_menu', [$this, 'network_admin_menu']);
       $this->plugin_base = 'settings.php?page=wp-sync-db';
     } else {
-      add_action('admin_menu', array($this, 'admin_menu'));
+      add_action('admin_menu', [$this, 'admin_menu']);
       $this->plugin_base = 'tools.php?page=wp-sync-db';
     }
   }
@@ -259,11 +260,11 @@ class WPSDB extends WPSDB_Base
   {
     // Let developers define their own path to for export files
     // Note: We require a very specific data set here, it should be similiar to the following
-    // array(
+    // [
     //			'path' 	=> '/path/to/custom/uploads/directory', <- note missing end trailing slash
     //			'url'	=> 'http://yourwebsite.com/custom/uploads/directory' <- note missing end trailing slash
     // );
-    $upload_info = apply_filters('wpsdb_upload_info', array());
+    $upload_info = apply_filters('wpsdb_upload_info', []);
     if (!empty($upload_info)) {
       return $upload_info[$type];
     }
@@ -476,11 +477,11 @@ class WPSDB extends WPSDB_Base
 
     echo "Active Plugins:\r\n";
 
-    $active_plugins = (array) get_option('active_plugins', array());
+    $active_plugins = (array) get_option('active_plugins', []);
 
     if (is_multisite()) {
       $network_active_plugins = wp_get_active_network_plugins();
-      $active_plugins = array_map(array($this, 'remove_wp_plugin_dir'), $network_active_plugins);
+      $active_plugins = array_map([$this, 'remove_wp_plugin_dir'], $network_active_plugins);
     }
 
     foreach ($active_plugins as $plugin) {
@@ -500,7 +501,7 @@ class WPSDB extends WPSDB_Base
 
   function fire_migration_complete()
   {
-    $filtered_post = $this->filter_post_elements($_POST, array('action', 'url'));
+    $filtered_post = $this->filter_post_elements($_POST, ['action', 'url']);
     if (!$this->verify_signature($filtered_post, $this->settings['key'])) {
       $error_msg = $this->invalid_content_verification_error . ' (#138)';
       $this->log_error($error_msg, $filtered_post);
@@ -561,7 +562,7 @@ class WPSDB extends WPSDB_Base
 
   function respond_to_remote_finalize_migration()
   {
-    $filtered_post = $this->filter_post_elements($_POST, array('action', 'intent', 'url', 'key', 'form_data', 'prefix', 'type', 'location', 'tables', 'temp_prefix'));
+    $filtered_post = $this->filter_post_elements($_POST, ['action', 'intent', 'url', 'key', 'form_data', 'prefix', 'type', 'location', 'tables', 'temp_prefix']);
     if (!$this->verify_signature($filtered_post, $this->settings['key'])) {
       $error_msg = $this->invalid_content_verification_error . ' (#123)';
       $this->log_error($error_msg, $filtered_post);
@@ -578,7 +579,7 @@ class WPSDB extends WPSDB_Base
     global $wpdb;
 
     $tables = explode(',', $_POST['tables']);
-    $temp_tables = array();
+    $temp_tables = [];
     foreach ($tables as $table) {
       $temp_prefix = stripslashes($_POST['temp_prefix']);
       $temp_tables[] = $temp_prefix . $table;
@@ -586,7 +587,7 @@ class WPSDB extends WPSDB_Base
 
     $sql = "SET FOREIGN_KEY_CHECKS=0;\n";
 
-    $preserved_options = array('wpsdb_settings', 'wpsdb_error_log');
+    $preserved_options = ['wpsdb_settings', 'wpsdb_error_log'];
 
     $this->form_data = $this->parse_migration_form_data($_POST['form_data']);
     if (isset($this->form_data['keep_active_plugins'])) {
@@ -623,7 +624,7 @@ class WPSDB extends WPSDB_Base
     $location = (isset($_POST['location']) ? $_POST['location'] : $_POST['url']);
 
     if (!isset($_POST['location'])) {
-      $data = array();
+      $data = [];
       $data['action'] = 'wpsdb_fire_migration_complete';
       $data['url'] = home_url();
       $data['sig'] = $this->create_signature($data, $_POST['key']);
@@ -647,7 +648,7 @@ class WPSDB extends WPSDB_Base
 
   function ajax_process_chunk()
   {
-    $filtered_post = $this->filter_post_elements($_POST, array('action', 'table', 'chunk_gzipped'));
+    $filtered_post = $this->filter_post_elements($_POST, ['action', 'table', 'chunk_gzipped']);
     $gzip = (isset($_POST['chunk_gzipped']) && $_POST['chunk_gzipped']);
 
     $tmp_file_name = 'chunk.txt';
@@ -826,10 +827,10 @@ class WPSDB extends WPSDB_Base
       }
 
       $result = $this->end_ajax(json_encode(
-        array(
+        [
           'current_row'     => $row_information[0],
           'primary_keys'    => $row_information[1]
-        )
+        ]
       ));
     }
     return $result;
@@ -837,7 +838,7 @@ class WPSDB extends WPSDB_Base
 
   function respond_to_backup_remote_table()
   {
-    $filtered_post = $this->filter_post_elements($_POST, array('action', 'intent', 'url', 'key', 'table', 'form_data', 'stage', 'bottleneck', 'prefix', 'current_row', 'dump_filename', 'last_table', 'gzip', 'primary_keys', 'path_current_site', 'domain_current_site'));
+    $filtered_post = $this->filter_post_elements($_POST, ['action', 'intent', 'url', 'key', 'table', 'form_data', 'stage', 'bottleneck', 'prefix', 'current_row', 'dump_filename', 'last_table', 'gzip', 'primary_keys', 'path_current_site', 'domain_current_site']);
     $filtered_post['primary_keys'] = stripslashes($filtered_post['primary_keys']);
     if (!$this->verify_signature($filtered_post, $this->settings['key'])) {
       $error_msg = $this->invalid_content_verification_error . ' (#137)';
@@ -881,7 +882,7 @@ class WPSDB extends WPSDB_Base
 
   function respond_to_process_pull_request()
   {
-    $filtered_post = $this->filter_post_elements($_POST, array('action', 'intent', 'url', 'key', 'table', 'form_data', 'stage', 'bottleneck', 'prefix', 'current_row', 'dump_filename', 'pull_limit', 'last_table', 'gzip', 'primary_keys', 'path_current_site', 'domain_current_site'));
+    $filtered_post = $this->filter_post_elements($_POST, ['action', 'intent', 'url', 'key', 'table', 'form_data', 'stage', 'bottleneck', 'prefix', 'current_row', 'dump_filename', 'pull_limit', 'last_table', 'gzip', 'primary_keys', 'path_current_site', 'domain_current_site']);
 
     // verification will fail unless we strip slashes on primary_keys and form_data
     $filtered_post['primary_keys'] = stripslashes($filtered_post['primary_keys']);
@@ -919,11 +920,11 @@ class WPSDB extends WPSDB_Base
     $this->form_data = $this->parse_migration_form_data($_POST['form_data']);
     if ($_POST['intent'] == 'savefile') {
 
-      $return = array(
+      $return = [
         'code' => 200,
         'message' => 'OK',
-        'body'  => json_encode(array('error' => 0)),
-      );
+        'body'  => json_encode(['error' => 0]),
+      ];
 
       $return['dump_filename'] = basename($this->get_sql_dump_info('migrate', 'path'));
       $return['dump_url'] = $this->get_sql_dump_info('migrate', 'url');
@@ -948,18 +949,18 @@ class WPSDB extends WPSDB_Base
       $return['dump_filename'] = $dump_filename_no_extension;
     } else { // does one last check that our verification string is valid
 
-      $data = array(
+      $data = [
         'action'  => 'wpsdb_remote_initiate_migration',
         'intent' => $_POST['intent'],
         'form_data' => $_POST['form_data'],
-      );
+      ];
 
       $data['sig'] = $this->create_signature($data, $_POST['key']);
       $ajax_url = trailingslashit($_POST['url']) . 'wp-admin/admin-ajax.php';
       $response = $this->remote_post($ajax_url, $data, __FUNCTION__);
 
       if (false === $response) {
-        $return = array('wpsdb_error' => 1, 'body' => $this->error);
+        $return = ['wpsdb_error' => 1, 'body' => $this->error];
         $result = $this->end_ajax(json_encode($return));
         return $result;
       }
@@ -968,14 +969,14 @@ class WPSDB extends WPSDB_Base
 
       if (false === $return) {
         $error_msg = __('Failed attempting to unserialize the response from the remote server. Please contact support.', 'wp-sync-db');
-        $return = array('wpsdb_error' => 1, 'body' => $error_msg);
+        $return = ['wpsdb_error' => 1, 'body' => $error_msg];
         $this->log_error($error_msg, $response);
         $result = $this->end_ajax(json_encode($return));
         return $result;
       }
 
       if (isset($return['error']) && $return['error'] == 1) {
-        $return = array('wpsdb_error' => 1, 'body' => $return['message']);
+        $return = ['wpsdb_error' => 1, 'body' => $return['message']];
         $result = $this->end_ajax(json_encode($return));
         return $result;
       }
@@ -1007,8 +1008,8 @@ class WPSDB extends WPSDB_Base
   // End point for the above remote_post call, ensures that the verification string is valid before continuing with the migration
   function respond_to_remote_initiate_migration()
   {
-    $return = array();
-    $filtered_post = $this->filter_post_elements($_POST, array('action', 'intent', 'form_data'));
+    $return = [];
+    $filtered_post = $this->filter_post_elements($_POST, ['action', 'intent', 'form_data']);
     if ($this->verify_signature($filtered_post, $this->settings['key'])) {
       if (isset($this->settings['allow_' . $_POST['intent']]) && (true === $this->settings['allow_' . $_POST['intent']] || 1 === $this->settings['allow_' . $_POST['intent']])) {
         $return['error'] = 0;
@@ -1109,10 +1110,10 @@ class WPSDB extends WPSDB_Base
   function ajax_verify_connection_to_remote_site()
   {
     $this->check_ajax_referer('verify-connection-to-remote-site');
-    $data = array(
+    $data = [
       'action'  => 'wpsdb_verify_connection_to_remote_site',
       'intent' => $_POST['intent']
-    );
+    ];
 
     $data['sig'] = $this->create_signature($data, $_POST['key']);
     $ajax_url = trailingslashit($_POST['url']) . 'wp-admin/admin-ajax.php';
@@ -1124,7 +1125,7 @@ class WPSDB extends WPSDB_Base
     $alt_action = '';
 
     if (false === $response) {
-      $return = array('wpsdb_error' => 1, 'body' => $this->error);
+      $return = ['wpsdb_error' => 1, 'body' => $this->error];
       $result = $this->end_ajax(json_encode($return));
       return $result;
     }
@@ -1133,14 +1134,14 @@ class WPSDB extends WPSDB_Base
 
     if (false === $response) {
       $error_msg = __('Failed attempting to unserialize the response from the remote server. Please contact support.', 'wp-sync-db');
-      $return = array('wpsdb_error' => 1, 'body' => $error_msg);
+      $return = ['wpsdb_error' => 1, 'body' => $error_msg];
       $this->log_error($error_msg);
       $result = $this->end_ajax(json_encode($return));
       return $result;
     }
 
     if (isset($response['error']) && $response['error'] == 1) {
-      $return = array('wpsdb_error' => 1, 'body' => $response['message']);
+      $return = ['wpsdb_error' => 1, 'body' => $response['message']];
       $this->log_error($response['message'], $response);
       $result = $this->end_ajax(json_encode($return));
       return $result;
@@ -1167,9 +1168,9 @@ class WPSDB extends WPSDB_Base
   {
     global $wpdb;
 
-    $return = array();
+    $return = [];
 
-    $filtered_post = $this->filter_post_elements($_POST, array('action', 'intent'));
+    $filtered_post = $this->filter_post_elements($_POST, ['action', 'intent']);
     if (!$this->verify_signature($filtered_post, $this->settings['key'])) {
       $return['error'] = 1;
       $return['message'] = $this->invalid_content_verification_error . ' (#120) <a href="#" class="try-again js-action-link">' . __('Try again?', 'wp-sync-db') . '</a>';
@@ -1194,7 +1195,7 @@ class WPSDB extends WPSDB_Base
     $return['prefixed_tables'] = $this->get_tables('prefix');
     $return['table_sizes'] = $this->get_table_sizes();
     $return['table_rows'] = $this->get_table_row_count();
-    $return['table_sizes_hr'] = array_map(array($this, 'format_table_sizes'), $this->get_table_sizes());
+    $return['table_sizes_hr'] = array_map([$this, 'format_table_sizes'], $this->get_table_sizes());
     $return['path'] = $this->absolute_root_file_path;
     $return['url'] = home_url();
     $return['prefix'] = $wpdb->prefix;
@@ -1239,7 +1240,7 @@ class WPSDB extends WPSDB_Base
       $sql = "SELECT `post_type` FROM `{$wpdb->prefix}posts` ";
       foreach ($tables as $table) {
         if (0 == preg_match('/' . $wpdb->prefix . '[0-9]+_posts/', $table)) continue;
-        $blog_id = str_replace(array($wpdb->prefix, '_posts'), array('', ''), $table);
+        $blog_id = str_replace([$wpdb->prefix, '_posts'], ['', ''], $table);
         $sql .= "UNION SELECT `post_type` FROM `{$wpdb->prefix}" . $blog_id . "_posts` ";
       }
       $sql .= ";";
@@ -1253,7 +1254,7 @@ class WPSDB extends WPSDB_Base
       );
     }
 
-    $return = array('revision');
+    $return = ['revision'];
     foreach ($post_types as $post_type) {
       $return[] = $post_type['post_type'];
     }
@@ -1280,7 +1281,7 @@ class WPSDB extends WPSDB_Base
       ),
       ARRAY_A
     );
-    $return = array();
+    $return = [];
     foreach ($results as $results) {
       $return[$results['TABLE_NAME']] = ($results['TABLE_ROWS'] == 0 ? 1 : (int) $results['TABLE_ROWS']);
     }
@@ -1304,7 +1305,7 @@ class WPSDB extends WPSDB_Base
       ARRAY_A
     );
 
-    $return = array();
+    $return = [];
 
     foreach ($results as $result) {
       $return[$result['table']] = $result['size'];
@@ -1667,8 +1668,8 @@ class WPSDB extends WPSDB_Base
 
     // $defs = mysql defaults, looks up the default for that paricular column, used later on to prevent empty inserts values for that column
     // $ints = holds a list of the possible integar types so as to not wrap them in quotation marks later in the insert statements
-    $defs = array();
-    $ints = array();
+    $defs = [];
+    $ints = [];
     foreach ($table_structure as $struct) {
       if ((0 === strpos($struct->Type, 'tinyint')) ||
         (0 === strpos(strtolower($struct->Type), 'smallint')) ||
@@ -1692,8 +1693,8 @@ class WPSDB extends WPSDB_Base
     $this->row_tracker = $row_start;
 
     // \x08\\x09, not required
-    $search = array("\x00", "\x0a", "\x0d", "\x1a");
-    $replace = array('\0', '\n', '\r', '\Z');
+    $search = ["\x00", "\x0a", "\x0d", "\x1a"];
+    $replace = ['\0', '\n', '\r', '\Z'];
 
     $query_size = 0;
 
@@ -1703,14 +1704,14 @@ class WPSDB extends WPSDB_Base
       $table_name = $temp_prefix . $table;
     }
 
-    $this->primary_keys = array();
+    $this->primary_keys = [];
     $use_primary_keys = true;
     foreach ($table_structure as $col) {
       $field_set[] = $this->backquote($col->Field);
       if ($col->Key == 'PRI' && true == $use_primary_keys) {
         if (false === strpos($col->Type, 'int')) {
           $use_primary_keys = false;
-          $this->primary_keys = array();
+          $this->primary_keys = [];
           continue;
         }
         $this->primary_keys[$col->Field] = 0;
@@ -1731,7 +1732,7 @@ class WPSDB extends WPSDB_Base
     $insert_buffer = $insert_query_template = "INSERT INTO " . $this->backquote($table_name) . " ( " . $fields . ") VALUES\n";
 
     do {
-      $join = array();
+      $join = [];
       $where = 'WHERE 1=1';
       $order_by = '';
       // We need ORDER BY here because with LIMIT, sometimes it will return
@@ -1740,7 +1741,7 @@ class WPSDB extends WPSDB_Base
         if ($this->table_is('comments', $table)) {
           $where .= ' AND comment_approved != "spam"';
         } elseif ($this->table_is('commentmeta', $table)) {
-          extract($this->get_ms_compat_table_names(array('commentmeta', 'comments'), $table));
+          extract($this->get_ms_compat_table_names(['commentmeta', 'comments'], $table));
           $join[] = sprintf('INNER JOIN %1$s ON %1$s.comment_ID = %2$s.comment_id', $this->backquote($comments_table), $this->backquote($commentmeta_table));
           $where .= sprintf(' AND %1$s.comment_approved != \'spam\'', $this->backquote($comments_table));
         }
@@ -1751,15 +1752,15 @@ class WPSDB extends WPSDB_Base
         if ($this->table_is('posts', $table)) {
           $where .= ' AND `post_type` NOT IN ( ' . $post_types . ' )';
         } elseif ($this->table_is('postmeta', $table)) {
-          extract($this->get_ms_compat_table_names(array('postmeta', 'posts'), $table));
+          extract($this->get_ms_compat_table_names(['postmeta', 'posts'], $table));
           $join[] = sprintf('INNER JOIN %1$s ON %1$s.ID = %2$s.post_id', $this->backquote($posts_table), $this->backquote($postmeta_table));
           $where .= sprintf(' AND %1$s.post_type NOT IN ( ' . $post_types . ' )', $this->backquote($posts_table));
         } elseif ($this->table_is('comments', $table)) {
-          extract($this->get_ms_compat_table_names(array('comments', 'posts'), $table));
+          extract($this->get_ms_compat_table_names(['comments', 'posts'], $table));
           $join[] = sprintf('INNER JOIN %1$s ON %1$s.ID = %2$s.comment_post_ID', $this->backquote($posts_table), $this->backquote($comments_table));
           $where .= sprintf(' AND %1$s.post_type NOT IN ( ' . $post_types . ' )', $this->backquote($posts_table));
         } elseif ($this->table_is('commentmeta', $table)) {
-          extract($this->get_ms_compat_table_names(array('commentmeta', 'posts', 'comments'), $table));
+          extract($this->get_ms_compat_table_names(['commentmeta', 'posts', 'comments'], $table));
           $join[] = sprintf('INNER JOIN %1$s ON %1$s.comment_ID = %2$s.comment_id', $this->backquote($comments_table), $this->backquote($commentmeta_table));
           $join[] = sprintf('INNER JOIN %2$s ON %2$s.ID = %1$s.comment_post_ID', $this->backquote($comments_table), $this->backquote($posts_table));
           $where .= sprintf(' AND %1$s.post_type NOT IN ( ' . $post_types . ' )', $this->backquote($posts_table));
@@ -1780,7 +1781,7 @@ class WPSDB extends WPSDB_Base
 
       if (!empty($this->primary_keys)) {
         $primary_keys_keys = array_keys($this->primary_keys);
-        $primary_keys_keys = array_map(array($this, 'backquote'), $primary_keys_keys);
+        $primary_keys_keys = array_map([$this, 'backquote'], $primary_keys_keys);
 
         $order_by = 'ORDER BY ' . implode(',', $primary_keys_keys);
         $limit = "LIMIT $row_inc";
@@ -1792,10 +1793,10 @@ class WPSDB extends WPSDB_Base
 
           // build a list of clauses, iteratively reducing the number of fields compared in the compound key
           // e.g. (a = 1 AND b = 2 AND c > 3) OR (a = 1 AND b > 2) OR (a > 1)
-          $clauses = array();
+          $clauses = [];
           for ($j = 0; $j < $primary_key_count; $j++) {
             // build a subclause for each field in the compound index
-            $subclauses = array();
+            $subclauses = [];
             $i = 0;
             foreach ($temp_primary_keys as $primary_key => $value) {
               // only the last field in the key should be different in this subclause
@@ -1831,7 +1832,7 @@ class WPSDB extends WPSDB_Base
 
       if ($table_data) {
         foreach ($table_data as $row) {
-          $values = array();
+          $values = [];
           foreach ($row as $key => $value) {
             if (isset($ints[strtolower($key)]) && $ints[strtolower($key)]) {
               // make sure there are no blank spots in the insert syntax,
@@ -1990,7 +1991,7 @@ class WPSDB extends WPSDB_Base
     }
 
     // build table names
-    $ms_compat_table_names = array();
+    $ms_compat_table_names = [];
     foreach ($tables as $table) {
       $ms_compat_table_names[$table . '_table'] = $prefix . $table;
     }
@@ -2024,7 +2025,7 @@ class WPSDB extends WPSDB_Base
         }
         $data = $this->recursive_unserialize_replace($unserialized, true, true);
       } elseif (is_array($data)) {
-        $_tmp = array();
+        $_tmp = [];
         foreach ($data as $key => $value) {
           $_tmp[$key] = $this->recursive_unserialize_replace($value, false, $parent_serialized);
         }
@@ -2042,7 +2043,7 @@ class WPSDB extends WPSDB_Base
         $data = $_tmp;
         unset($_tmp);
       } elseif ($this->is_json($data, true)) {
-        $_tmp = array();
+        $_tmp = [];
         $data = json_decode($data, true);
         foreach ($data as $key => $value) {
           $_tmp[$key] = $this->recursive_unserialize_replace($value, false, $parent_serialized);
@@ -2127,10 +2128,10 @@ class WPSDB extends WPSDB_Base
     if ($_POST['intent'] == 'savefile' || $_POST['stage'] == 'backup') {
       $this->close($this->fp);
       $result = $this->end_ajax(json_encode(
-        array(
+        [
           'current_row'   => $this->row_tracker,
           'primary_keys'  => serialize($this->primary_keys)
-        )
+        ]
       ));
       return $result;
     }
@@ -2146,12 +2147,12 @@ class WPSDB extends WPSDB_Base
       $chunk_gzipped = '1';
     }
 
-    $data = array(
+    $data = [
       'action'  => 'wpsdb_process_chunk',
       'table' => $_POST['table'],
       'chunk_gzipped'  => $chunk_gzipped,
       'chunk'  =>  $this->current_chunk // NEEDS TO BE the last element in this array because of adding it back into the array in ajax_process_chunk()
-    );
+    ];
 
     $data['sig'] = $this->create_signature($data, $_POST['key']);
 
@@ -2167,10 +2168,10 @@ class WPSDB extends WPSDB_Base
     }
 
     $result = $this->end_ajax(json_encode(
-      array(
+      [
         'current_row'     => $this->row_tracker,
         'primary_keys'    => serialize($this->primary_keys)
-      )
+      ]
     ));
     return $result;
   }
@@ -2183,7 +2184,7 @@ class WPSDB extends WPSDB_Base
   {
     if (!empty($a_name) && $a_name != '*') {
       if (is_array($a_name)) {
-        $result = array();
+        $result = [];
         reset($a_name);
         while (list($key, $val) = each($a_name))
           $result[$key] = '`' . $val . '`';
@@ -2209,26 +2210,26 @@ class WPSDB extends WPSDB_Base
 
   function network_admin_menu()
   {
-    $hook_suffix = add_submenu_page('settings.php', 'Migrate DB', 'Migrate DB', 'manage_network_options', 'wp-sync-db', array($this, 'options_page'));
+    $hook_suffix = add_submenu_page('settings.php', 'Migrate DB', 'Migrate DB', 'manage_network_options', 'wp-sync-db', [$this, 'options_page']);
     $this->after_admin_menu($hook_suffix);
   }
 
   function admin_menu()
   {
-    $hook_suffix = add_management_page('Migrate DB', 'Migrate DB', 'export', 'wp-sync-db', array($this, 'options_page'));
+    $hook_suffix = add_management_page('Migrate DB', 'Migrate DB', 'export', 'wp-sync-db', [$this, 'options_page']);
     $this->after_admin_menu($hook_suffix);
   }
 
   function after_admin_menu($hook_suffix)
   {
-    add_action('admin_head-' . $hook_suffix, array($this, 'admin_head_connection_info'));
-    add_action('load-' . $hook_suffix, array($this, 'load_assets'));
+    add_action('admin_head-' . $hook_suffix, [$this, 'admin_head_connection_info']);
+    add_action('load-' . $hook_suffix, [$this, 'load_assets']);
   }
 
   function admin_body_class($classes)
   {
     if (!$classes) {
-      $classes = array();
+      $classes = [];
     } else {
       $classes = explode(' ', $classes);
     }
@@ -2255,7 +2256,7 @@ class WPSDB extends WPSDB_Base
     $version = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? time() : $this->plugin_version;
 
     $src = $plugins_url . 'asset/css/styles.css';
-    wp_enqueue_style('wp-sync-db-styles', $src, array(), $version);
+    wp_enqueue_style('wp-sync-db-styles', $src, [], $version);
 
     $src = $plugins_url . 'asset/js/common.js';
     wp_enqueue_script('wp-sync-db-common', $src, NULL, $version, true);
@@ -2266,9 +2267,9 @@ class WPSDB extends WPSDB_Base
     do_action('wpsdb_load_assets');
 
     $src = $plugins_url . 'asset/js/script.js';
-    wp_enqueue_script('wp-sync-db-script', $src, array('jquery'), $version, true);
+    wp_enqueue_script('wp-sync-db-script', $src, ['jquery'], $version, true);
 
-    wp_localize_script('wp-sync-db-script', 'wpsdb_i10n', array(
+    wp_localize_script('wp-sync-db-script', 'wpsdb_i10n', [
       'max_request_size_problem'        => __("A problem occurred when trying to change the maximum request size, please try again.", 'wp-sync-db'),
       'establishing_remote_connection'    => __("Establishing connection to remote server, please wait", 'wp-sync-db'),
       'connection_local_server_problem'    => __("A problem occurred when attempting to connect to the local server, please check the details and try again.", 'wp-sync-db'),
@@ -2323,7 +2324,7 @@ class WPSDB extends WPSDB_Base
       'migration_cancellation_failed'      => __("Migration cancellation failed", 'wp-sync-db'),
       'manually_remove_temp_files'      => __("A problem occurred while cancelling the migration, you may have to manually delete some temporary files / tables.", 'wp-sync-db'),
       'migration_cancelled'          => __("Migration cancelled", 'wp-sync-db'),
-    ));
+    ]);
 
     wp_enqueue_script('jquery');
     wp_enqueue_script('jquery-ui-core');
@@ -2363,7 +2364,7 @@ class WPSDB extends WPSDB_Base
   {
     global $table_prefix;
 
-    $nonces = array(
+    $nonces = [
       'update_max_request_size'       => wp_create_nonce('update-max-request-size'),
       'verify_connection_to_remote_site'  => wp_create_nonce('verify-connection-to-remote-site'),
       'clear_log'              => wp_create_nonce('clear-log'),
@@ -2375,13 +2376,13 @@ class WPSDB extends WPSDB_Base
       'reset_api_key'            => wp_create_nonce('reset-api-key'),
       'delete_migration_profile'      => wp_create_nonce('delete-migration-profile'),
       'save_setting'            => wp_create_nonce('save-setting'),
-    );
+    ];
 
     $nonces = apply_filters('wpsdb_nonces', $nonces);
 
   ?>
     <script type='text/javascript'>
-      var wpsdb_connection_info = <?php echo json_encode(array(site_url('', 'https'), $this->settings['key'])); ?>;
+      var wpsdb_connection_info = <?php echo json_encode([site_url('', 'https'), $this->settings['key']]); ?>;
       var wpsdb_this_url = '<?php echo addslashes(home_url()) ?>';
       var wpsdb_this_path = '<?php echo addslashes($this->absolute_root_file_path); ?>';
       var wpsdb_this_domain = '<?php echo $this->get_domain_current_site(); ?>';
@@ -2414,7 +2415,7 @@ class WPSDB extends WPSDB_Base
 
     if (isset($profile['exclude_revisions'])) {
       unset($profile['exclude_revisions']);
-      $profile['select_post_types'] = array('revision');
+      $profile['select_post_types'] = ['revision'];
       $profile_changed = true;
     }
 
@@ -2521,7 +2522,7 @@ class WPSDB extends WPSDB_Base
 
   function respond_to_process_push_migration_cancellation()
   {
-    $filtered_post = $this->filter_post_elements($_POST, array('action', 'intent', 'url', 'key', 'form_data', 'dump_filename', 'temp_prefix', 'stage'));
+    $filtered_post = $this->filter_post_elements($_POST, ['action', 'intent', 'url', 'key', 'form_data', 'dump_filename', 'temp_prefix', 'stage']);
     if (!$this->verify_signature($filtered_post, $this->settings['key'])) {
       echo $this->invalid_content_verification_error;
       exit;

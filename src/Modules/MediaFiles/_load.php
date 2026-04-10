@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /*
 Origin: http://github.com/wp-sync-db/wp-sync-db-media-files
 */

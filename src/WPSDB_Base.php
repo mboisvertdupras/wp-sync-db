@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace WPSDB;
 
@@ -40,7 +41,7 @@ class WPSDB_Base
     $this->plugin_basename = plugin_basename($plugin_file_path);
     $this->template_dir = $this->plugin_dir_path . 'template' . DIRECTORY_SEPARATOR;
     $this->plugin_title = ucwords(str_ireplace('-', ' ', basename($plugin_file_path)));
-    $this->plugin_title = str_ireplace(array('db', 'wp', '.php'), array('DB', 'WP', ''), $this->plugin_title);
+    $this->plugin_title = str_ireplace(['db', 'wp', '.php'], ['DB', 'WP', ''], $this->plugin_title);
 
     if (is_multisite()) {
       $this->plugin_base = 'settings.php?page=wp-sync-db';
@@ -51,7 +52,7 @@ class WPSDB_Base
     // allow devs to change the temporary prefix applied to the tables
     $this->temp_prefix = apply_filters('wpsdb_temporary_prefix', $this->temp_prefix);
 
-    add_action('init', array($this, 'set_translations'));
+    add_action('init', [$this, 'set_translations']);
   }
 
   function template($template)
@@ -75,7 +76,7 @@ class WPSDB_Base
     }
   }
 
-  function remote_post($url, $data, $scope, $args = array(), $expecting_serial = false)
+  function remote_post($url, $data, $scope, $args = [], $expecting_serial = false)
   {
     $this->set_time_limit();
 
@@ -95,11 +96,11 @@ class WPSDB_Base
 
     $default_remote_post_timeout = apply_filters('wpsdb_default_remote_post_timeout', 60 * 20);
 
-    $args = wp_parse_args($args, array(
+    $args = wp_parse_args($args, [
       'timeout'  => $default_remote_post_timeout,
       'blocking'  => true,
       'sslverify'  => $sslverify,
-    ));
+    ]);
 
     $args['method'] = 'POST';
     if (! isset($args['body'])) {
@@ -173,7 +174,7 @@ class WPSDB_Base
     return $response['body'];
   }
 
-  function retry_remote_post($url, $data, $scope, $args = array(), $expecting_serial = false)
+  function retry_remote_post($url, $data, $scope, $args = [], $expecting_serial = false)
   {
     $url = substr_replace($url, 'http', 0, 5);
     if ($response = $this->remote_post($url, $data, $scope, $args, $expecting_serial)) {
@@ -295,7 +296,7 @@ class WPSDB_Base
 
   function diverse_array($vector)
   {
-    $result = array();
+    $result = [];
     foreach ($vector as $key1 => $value1)
       foreach ($value1 as $key2 => $value2)
         $result[$key2][$key1] = $value2;
@@ -378,14 +379,14 @@ class WPSDB_Base
     if (defined('DOING_WPSDB_TESTS') || $this->doing_cli_migration) return;
     $result = check_ajax_referer($action, 'nonce', false);
     if (false === $result) {
-      $return = array('wpsdb_error' => 1, 'body' => sprintf(__('Invalid nonce for: %s', 'wp-sync-db'), $action));
+      $return = ['wpsdb_error' => 1, 'body' => sprintf(__('Invalid nonce for: %s', 'wp-sync-db'), $action)];
       $this->end_ajax(json_encode($return));
     }
 
     $cap = (is_multisite()) ? 'manage_network_options' : 'export';
     $cap = apply_filters('wpsdb_ajax_cap', $cap);
     if (!current_user_can($cap)) {
-      $return = array('wpsdb_error' => 1, 'body' => sprintf(__('Access denied for: %s', 'wp-sync-db'), $action));
+      $return = ['wpsdb_error' => 1, 'body' => sprintf(__('Access denied for: %s', 'wp-sync-db'), $action)];
       $this->end_ajax(json_encode($return));
     }
   }

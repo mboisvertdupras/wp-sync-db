@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace WPSDB\Modules\CLI;
 
@@ -54,7 +55,7 @@ class WPSDB_CLI extends WPSDB_Base
     $initiate_migration_response = apply_filters('wpsdb_cli_initiate_migration_response', $initiate_migration_response);
 
     // determine which tables to backup (if required)
-    $tables_to_backup = array();
+    $tables_to_backup = [];
     if ('backup' == $_POST['stage']) {
       if ('push' == $profile['action']) {
         if ('backup_only_with_prefix' == $profile['backup_option']) {
@@ -77,7 +78,7 @@ class WPSDB_CLI extends WPSDB_Base
     $tables_to_backup = apply_filters('wpsdb_cli_tables_to_backup', $tables_to_backup, $profile, $verify_connection_response, $initiate_migration_response);
 
     // determine which tables to migrate
-    $tables_to_migrate = array();
+    $tables_to_migrate = [];
     if ('push' == $profile['action']) {
       if ('migrate_only_with_prefix' == $profile['table_migrate_option']) {
         $tables_to_migrate = $this->get_tables('prefix');
@@ -139,7 +140,7 @@ class WPSDB_CLI extends WPSDB_Base
     $_POST['temp_prefix'] = $verify_connection_response['temp_prefix'];
     $_POST = apply_filters('wpsdb_cli_finalize_migration_args', $_POST, $profile, $verify_connection_response, $initiate_migration_response);
     // don't send redundant POST variables
-    $_POST = $this->filter_post_elements($_POST, array('action', 'intent', 'url', 'key', 'form_data', 'prefix', 'type', 'location', 'tables', 'temp_prefix'));
+    $_POST = $this->filter_post_elements($_POST, ['action', 'intent', 'url', 'key', 'form_data', 'prefix', 'type', 'location', 'tables', 'temp_prefix']);
     $response = trim($wpsdb->ajax_finalize_migration() ?? '');
     if (! empty($response)) return $this->cli_error($response);
 

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /*
 Plugin Name: WP Sync DB Compatibility
 Description: Prevents 3rd party plugins from being loaded during WP Sync DB specific operations
