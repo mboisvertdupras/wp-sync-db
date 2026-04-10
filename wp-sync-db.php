@@ -11,6 +11,17 @@
  * Network: True
  */
 
+// PHP version check - must run before autoload.php which may contain PHP 8.3 syntax
+if (PHP_VERSION_ID < 80300) {
+    add_action('admin_notices', function () {
+        echo '<div class="notice notice-error is-dismissible"><p>' . sprintf(
+            __('<strong>WP Sync DB Error:</strong> This plugin requires PHP 8.3 or higher. You are running PHP %s. Please upgrade your PHP version.', 'wp-sync-db'),
+            PHP_VERSION
+        ) . '</p></div>';
+    });
+    return;
+}
+
 if (!file_exists(dirname(__FILE__) . '/lib/autoload.php')) {
   add_action('admin_notices', function () {
     echo '<div class="notice notice-error is-dismissible"><p>' . sprintf(

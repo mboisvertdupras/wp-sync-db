@@ -23,6 +23,9 @@
 		"php-stubs/wordpress-stubs": "^6.8",
 		"php-stubs/wordpress-globals": "^0.2.0"
 	},
+	"require": {
+		"php": ">=8.3"
+	},
 	"config": {
 		"vendor-dir": "lib"
 	}
