@@ -57,6 +57,7 @@ class WPSDB extends WPSDB_Base
     parent::__construct($plugin_file_path);
 
     if (! function_exists('get_plugin_data')) {
+      // @phpstan-ignore requireOnce.fileNotFound (WordPress core file)
       require_once ABSPATH . 'wp-admin/includes/plugin.php';
     }
 
@@ -225,12 +226,10 @@ class WPSDB extends WPSDB_Base
      *
      * @since 1.0
      */
-    add_action('wp_ajax_wpsdb_cancel_migration', $this->ajax_cancel_migration(...));
-
-    // external AJAX handlers
+    add_action('wp_ajax_wpsdb_cancel_migration', $this->ajax_cancel_migration(...)); // @phpstan-ignore deadCode.unreachable
 
     /**
-     * Handle external AJAX request to verify connection from remote site.
+     * External AJAX handler - verify connection from remote site.
      *
      * @since 1.0
      */
@@ -417,7 +416,7 @@ class WPSDB extends WPSDB_Base
         exit;
       }
       if (!copy($source, $dest)) {
-        _e(sprintf('Could not copy the compatibility plugin from %1$s to %2$s', $source, $destination), 'wp-sync-db');
+        _e(sprintf('Could not copy the compatibility plugin from %1$s to %2$s', $source, $dest), 'wp-sync-db');
         exit;
       }
     } else { // uninstall MU plugin
@@ -605,7 +604,7 @@ class WPSDB extends WPSDB_Base
     echo "\r\n";
 
     echo 'MySQL: ';
-    echo esc_html(empty($wpdb->use_mysqli) ? mysql_get_server_info() : mysqli_get_server_info($wpdb->dbh));
+    echo esc_html((empty($wpdb->use_mysqli) && function_exists('mysql_get_server_info')) ? mysql_get_server_info() : mysqli_get_server_info($wpdb->dbh));
     echo "\r\n";
 
     _e('ext/mysqli', 'wp-app-store');
@@ -635,6 +634,7 @@ class WPSDB extends WPSDB_Base
     }
 
     echo 'Debug Mode: ';
+    // @phpstan-ignore booleanAnd.rightAlwaysFalse (WordPress constant)
     if (defined('WP_DEBUG') && WP_DEBUG) {
       echo 'Yes';
     } else {
@@ -1613,7 +1613,8 @@ class WPSDB extends WPSDB_Base
 		 * NB: only handles the current network site, does not work for additional networks / mapped domains
 		 */
     $subdomain_replace_enabled = apply_filters('wpsdb_subdomain_replace', true); // allow developers to turn off this functionality
-    if ($subdomain_replace_enabled && is_multisite() && defined('SUBDOMAIN_INSTALL') && SUBDOMAIN_INSTALL & !empty($_POST['domain_current_site'])) {
+    // @phpstan-ignore booleanAnd.alwaysFalse, booleanAnd.rightAlwaysFalse (WordPress multisite constants)
+    if ($subdomain_replace_enabled && is_multisite() && defined('SUBDOMAIN_INSTALL') && SUBDOMAIN_INSTALL && !empty($_POST['domain_current_site'])) {
       $pattern = '|//(.*?)\\.' . preg_quote((string) $this->get_domain_current_site(), '|') . '|';
       $replacement = '//$1.' . trim((string) $_POST['domain_current_site']);
       $new = preg_replace($pattern, $replacement, $new);
@@ -1627,6 +1628,7 @@ class WPSDB extends WPSDB_Base
     if (preg_match('@CONSTRAINT|FOREIGN[\s]+KEY@', (string) $create_query)) {
 
       $sql_constraints_query = '';
+      $crlf = "\n"; // default value
 
       $nl_nix = "\n";
       $nl_win = "\r\n";
@@ -1727,7 +1729,7 @@ class WPSDB extends WPSDB_Base
    * Modified by Scott Merrill (http://www.skippy.net/)
    * to use the WordPress $wpdb object
    *
-   * @return void
+   * @return mixed
    */
   public function export_table(string $table)
   {
@@ -1857,6 +1859,7 @@ class WPSDB extends WPSDB_Base
     }
 
     $this->primary_keys = [];
+    $field_set = [];
     $use_primary_keys = true;
     foreach ($table_structure as $col) {
       $field_set[] = $this->backquote($col->Field);
@@ -1873,7 +1876,7 @@ class WPSDB extends WPSDB_Base
     $first_select = true;
     if (!empty($_POST['primary_keys'])) {
       $_POST['primary_keys'] = trim((string) $_POST['primary_keys']);
-      if (isset($_POST['primary_keys']) && ('' !== $_POST['primary_keys'] && '0' !== $_POST['primary_keys']) && is_serialized($_POST['primary_keys'])) {
+      if ('' !== $_POST['primary_keys'] && '0' !== $_POST['primary_keys'] && is_serialized($_POST['primary_keys'])) {
         $this->primary_keys = unserialize(stripslashes($_POST['primary_keys']));
         $first_select = false;
       }
@@ -1887,6 +1890,11 @@ class WPSDB extends WPSDB_Base
       $join = [];
       $where = 'WHERE 1=1';
       $order_by = '';
+      // Initialize variables that may be populated by extract() calls below
+      $comments_table = null;
+      $commentmeta_table = null;
+      $posts_table = null;
+      $postmeta_table = null;
       // We need ORDER BY here because with LIMIT, sometimes it will return
       // the same results from the previous query and we'll have duplicate insert statements
       if ('backup' != $_POST['stage'] && isset($this->form_data['exclude_spam'])) {
@@ -1986,6 +1994,7 @@ class WPSDB extends WPSDB_Base
         foreach ($table_data as $row) {
           $values = [];
           foreach ($row as $key => $value) {
+            // @phpstan-ignore booleanAnd.rightAlwaysTrue (array values can be 0)
             if (isset($ints[strtolower((string) $key)]) && $ints[strtolower((string) $key)]) {
               // make sure there are no blank spots in the insert syntax,
               // yet try to avoid quotation marks around integers
@@ -2156,11 +2165,11 @@ class WPSDB extends WPSDB_Base
    *
    * Mostly from https://github.com/interconnectit/Search-Replace-DB
    *
-   * @param array  $data               Used to pass any subordinate arrays back to in.
+   * @param mixed  $data               Used to pass any subordinate arrays back to in.
    * @param bool   $serialized         Does the array passed via $data need serialising.
    * @param bool   $parent_serialized  Passes whether the original data passed in was serialized
    *
-   * @return array    The original array with all elements replaced as needed.
+   * @return mixed    The original data with all elements replaced as needed.
    */
   public function recursive_unserialize_replace($data, $serialized = false, $parent_serialized = false)
   {
@@ -2325,7 +2334,14 @@ class WPSDB extends WPSDB_Base
    * Add backquotes to tables and db-names in
    * SQL queries. Taken from phpMyAdmin.
    */
-  public function backquote(?string $a_name): array|string|null
+  /**
+   * Add backquotes to tables and db-names in
+   * SQL queries. Taken from phpMyAdmin.
+   *
+   * @param array<string>|string|null $a_name The table name, array of names, or null.
+   * @return array<string>|string|null The backquoted name(s).
+   */
+  public function backquote(array|string|null $a_name): array|string|null
   {
     if (null !== $a_name && '' !== $a_name && '0' !== $a_name && '*' != $a_name) {
       if (is_array($a_name)) {
@@ -2408,16 +2424,17 @@ class WPSDB extends WPSDB_Base
 
     $plugins_url = trailingslashit(plugins_url('', $this->plugin_file_path));
 
+    // @phpstan-ignore booleanAnd.rightAlwaysFalse (WordPress constant)
     $version = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? time() : $this->plugin_version;
 
     $src = $plugins_url . 'asset/css/styles.css';
     wp_enqueue_style('wp-sync-db-styles', $src, [], $version);
 
     $src = $plugins_url . 'asset/js/common.js';
-    wp_enqueue_script('wp-sync-db-common', $src, NULL, $version, true);
+    wp_enqueue_script('wp-sync-db-common', $src, [], $version, true);
 
     $src = $plugins_url . 'asset/js/hook.js';
-    wp_enqueue_script('wp-sync-db-hook', $src, NULL, $version, true);
+    wp_enqueue_script('wp-sync-db-hook', $src, [], $version, true);
 
     do_action('wpsdb_load_assets');
 
@@ -2688,7 +2705,7 @@ class WPSDB extends WPSDB_Base
     }
 
     if (false === @unlink($dump_file)) {
-      e('Could not delete the MySQL export file.', 'wp-sync-db');
+      _e('Could not delete the MySQL export file.', 'wp-sync-db');
       exit;
     }
   }
