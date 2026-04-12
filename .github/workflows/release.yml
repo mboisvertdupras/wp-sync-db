@@ -1,29 +1,84 @@
 name: Build plugin
 on:
   push:
+    branches:
+      - main
+      - master
     tags:
       - 'v*' # Runs on version tags like v1.0.0
+  pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
+
 jobs:
-  build:
+  static-analysis:
+    name: Static Analysis (PHPStan + PHPCS)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3' # or your plugin's supported version
+          php-version: '8.3'
+          extensions: mbstring
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install composer dependencies (including dev)
+        run: composer install --optimize-autoloader
+
+      - name: Cache PHPStan results
+        uses: actions/cache@v4
+        with:
+          path: .phpstan-cache
+          key: ${{ runner.os }}-phpstan-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-phpstan-
+
+      - name: Run PHPStan analysis
+        run: ./lib/bin/phpstan analyze --configuration=phpstan.neon --memory-limit=1G --no-progress
+
+      - name: Run PHPCS check
+        run: ./lib/bin/phpcs --standard=phpcs.xml
+
+  build:
+    name: Build Release
+    needs: static-analysis
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
       - name: Install composer dependencies
         run: composer install --no-dev --optimize-autoloader
+
       - name: Create zip file
         run: |
           PLUGIN_SLUG=$(basename $GITHUB_REPOSITORY)
           TAG=${GITHUB_REF_NAME}
           mkdir -p build/$PLUGIN_SLUG
-          rsync -av --exclude='build' --exclude='.git*' --exclude='tests' --exclude='*.yml' --exclude='composer.*' ./ build/$PLUGIN_SLUG/
+          rsync -av --exclude='build' --exclude='.git*' --exclude='tests' --exclude='*.yml' --exclude='composer.*' --exclude='phpstan*' --exclude='phpcs*' --exclude='.phpstan*' ./ build/$PLUGIN_SLUG/
           cd build
           zip -r "${PLUGIN_SLUG}-${TAG}.zip" "$PLUGIN_SLUG"
+
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         with:

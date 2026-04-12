@@ -12,7 +12,8 @@
 	],
 	"scripts": {
 		"test": "./test.sh",
-		"phpcs": "./lib/bin/phpcs"
+		"phpcs": "./lib/bin/phpcs --standard=phpcs.xml",
+		"phpstan": "./lib/bin/phpstan analyze --configuration=phpstan.neon --memory-limit=1G"
 	},
 	"autoload": {
 		"psr-4": {
