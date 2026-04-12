@@ -67,7 +67,7 @@ class WPSDBCLI
         $longest_name_length = strlen($name);
       }
 
-      $lines[] = '    %G' . str_pad($id, 6, ' ') . '%n|    %y' . str_pad($action, 10, ' ') . '%n|    ' . $name;
+      $lines[] = '    %G' . str_pad((string) $id, 6, ' ') . '%n|    %y' . str_pad($action, 10, ' ') . '%n|    ' . $name;
     }
 
     WP_CLI::log(WP_CLI::colorize('    %GID%n    |    %yAction%n    |    Name'));

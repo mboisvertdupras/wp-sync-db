@@ -9,14 +9,13 @@ use WPSDB\WPSDB_Base;
 class WPSDB_CLI extends WPSDB_Base
 {
 
-  public function cli_migration(array $profile)
+  public function cli_migration(int $profile_id)
   {
-    /** @var WPSDB $wpsdb */
+    /** @var \WPSDB\WPSDB $wpsdb */
     global $wpsdb;
     $wpsdb_settings = get_option('wpsdb_settings');
-    --$profile;
-    if (! isset($profile)) return $this->cli_error(__('Profile ID missing.', 'wp-sync-db-cli'));
-
+    --$profile_id;
+    $profile = $profile_id;
     if (! isset($wpsdb_settings['profiles'][$profile])) return $this->cli_error(__('Profile ID not found.', 'wp-sync-db-cli'));
 
     $this->set_time_limit();
@@ -156,12 +155,12 @@ class WPSDB_CLI extends WPSDB_Base
   public function verify_cli_response(string $response, string $function_name): array|WP_Error
   {
     global $wpsdb;
-    $response = trim((string) $response);
-    if (false === $response) {
+    $trimmed_response = trim($response);
+    if ('' === $trimmed_response) {
       return $this->cli_error($this->error);
     }
 
-    if (false === $wpsdb->is_json($response)) {
+    if (false === $wpsdb->is_json($trimmed_response)) {
       return $this->cli_error(sprintf(__('%1$s was expecting a JSON response, instead we received: %2$s', 'wp-sync-db-cli'), $function_name, $response));
     }
 
