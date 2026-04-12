@@ -349,7 +349,7 @@ class WPSDB_Media_Files extends WPSDB_Base
 
     $args['body'] = $body;
     $ajax_url = trailingslashit($_POST['url']) . 'wp-admin/admin-ajax.php';
-    $response = $this->remote_post($ajax_url, '', __FUNCTION__, $args);
+    $response = $this->remote_post($ajax_url, [], __FUNCTION__, $args);
     $response = $this->verify_remote_post_response($response);
     return $this->end_ajax(json_encode($response));
   }
@@ -608,7 +608,9 @@ class WPSDB_Media_Files extends WPSDB_Base
 
   public function load_assets(): void
   {
+    // @phpstan-ignore-next-line - WPSDB_ROOT is defined in wp-sync-db.php bootstrap
     $src = WPSDB_ROOT . 'asset/js/media-files.js';
+    // @phpstan-ignore-next-line - WordPress constant pattern
     $version = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? time() : $this->plugin_version;
     wp_enqueue_script('wp-sync-db-media-files-script', $src, ['jquery', 'wp-sync-db-common', 'wp-sync-db-hook', 'wp-sync-db-script'], $version, true);
 
@@ -626,6 +628,7 @@ class WPSDB_Media_Files extends WPSDB_Base
   {
     $data['media_files_available'] = '1';
     $data['media_files_version'] = $this->plugin_version;
+    $max_file_uploads = false;
     if (function_exists('ini_get')) {
       $max_file_uploads = ini_get('max_file_uploads');
     }
@@ -705,19 +708,22 @@ class WPSDB_Media_Files extends WPSDB_Base
     return $tmpfname;
   }
 
-  public function verify_remote_post_response(array $response): mixed
+  /**
+   * @param string|false $response
+   */
+  public function verify_remote_post_response($response): mixed
   {
     if (false === $response) {
       $return = ['wpsdb_error' => 1, 'body' => $this->error];
       return $this->end_ajax(json_encode($return));
     }
 
-    if (! is_serialized(trim($response))) {
+    if (! is_serialized(trim((string) $response))) {
       $return = ['wpsdb_error'  => 1, 'body' => $response];
       return $this->end_ajax(json_encode($return));
     }
 
-    $response = unserialize(trim($response));
+    $response = unserialize(trim((string) $response));
 
     if (isset($response['wpsdb_error'])) {
       return $this->end_ajax(json_encode($response));

@@ -40,6 +40,7 @@ class WPSDB_Base
   public function __construct(protected string $plugin_file_path)
   {
     $this->settings = get_option('wpsdb_settings');
+    // @phpstan-ignore-next-line - get_option returns mixed, we need to validate
     if (!is_array($this->settings)) {
       $this->settings = [];
     }
@@ -159,7 +160,7 @@ class WPSDB_Base
           $this->error = sprintf(__('The connection failed, an unexpected error occurred, please contact support. (#121 - scope: %s)', 'wp-sync-db'), $scope);
         }
 
-        $this->log_error($this->error, $response);
+        $this->log_error($this->error, false);
         return false;
     }
     if ((int) $response['response']['code'] < 200 || (int) $response['response']['code'] > 399) {
@@ -216,7 +217,7 @@ class WPSDB_Base
 
   public function array_to_multipart(array $data): mixed
   {
-    if (!$data || !is_array($data)) {
+    if (empty($data)) {
       return $data;
     }
 
@@ -383,6 +384,7 @@ class WPSDB_Base
     global $wpdb;
     $prefix = ('temp' == $scope ? $this->temp_prefix : $wpdb->prefix);
     $tables = $wpdb->get_results('SHOW FULL TABLES', ARRAY_N);
+    $clean_tables = [];
     foreach ($tables as $table) {
       if (('temp' == $scope || 'prefix' == $scope) && !str_starts_with((string) $table[0], (string) $prefix)) {
           continue;

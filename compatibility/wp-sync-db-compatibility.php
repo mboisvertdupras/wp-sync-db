@@ -17,6 +17,8 @@ $GLOBALS['wpsdb_compatibility'] = true;
 * @param array $plugins numerically keyed array of plugin names
 */
 function wpsdbc_exclude_plugins( array $plugins ): array {
+	// PHPStan ignore: WordPress AJAX pattern - DOING_AJAX may not be defined or could be false
+	// @phpstan-ignore-next-line
 	if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX || !isset( $_POST['action'] ) || !str_contains( (string) $_POST['action'], 'wpsdb' ) ) return $plugins;
 
 	$wpsdb_settings = get_option( 'wpsdb_settings' );
@@ -47,6 +49,8 @@ add_filter( 'option_active_plugins', 'wpsdbc_exclude_plugins' );
 * @return array<string, int>
 */
 function wpsdbc_exclude_site_plugins( array $plugins ): array {
+	// PHPStan ignore: WordPress AJAX pattern - DOING_AJAX may not be defined or could be false
+	// @phpstan-ignore-next-line
 	if ( !defined( 'DOING_AJAX' ) || !DOING_AJAX || !isset( $_POST['action'] ) || !str_contains( (string) $_POST['action'], 'wpsdb' ) ) return $plugins;
 
 	$wpsdb_settings = get_option( 'wpsdb_settings' );
