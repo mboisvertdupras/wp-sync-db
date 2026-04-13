@@ -1,0 +1,14 @@
+parameters:
+    level: 5
+    phpVersion: 80300
+    paths:
+        - src/
+        - compatibility/
+        - wp-sync-db.php
+    excludePaths:
+        - lib/
+        - template/
+    scanFiles:
+        - lib/php-stubs/wordpress-stubs/wordpress-stubs.php
+        - lib/php-stubs/wp-cli-stubs/wp-cli-stubs.php
+        - lib/php-stubs/wordpress-globals/wordpress-globals.php
